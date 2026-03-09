@@ -1,0 +1,216 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN // Platform Owner (Kita)
+  ADMIN       // UMKM Owner
+  STAFF       // Kasir/Karyawan
+}
+
+enum TransactionType {
+  OFFLINE // POS di toko
+  ONLINE  // Marketplace to WA
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Tenant {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  dbSchema        String   @unique // Nama schema postgres (contoh: tenant_kopi_senja)
+  logo            String?
+  whatsappNumber  String
+  address         String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  domains         Domain[]
+  users           User[]
+  branches        Branch[]
+  categories      Category[]
+  products        Product[]
+  ingredients     Ingredient[]
+  transactions    Transaction[]
+  orderIntents    OrderIntent[]
+}
+
+model Domain {
+  id        String   @id @default(cuid())
+  domain    String   @unique // contoh: jeevawasa.umkmflow.com atau custom-domain.com
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  users     User[]
+  transactions Transaction[]
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  password      String?
+  role          Role      @default(ADMIN)
+  tenantId      String?
+  tenant        Tenant?   @relation(fields: [tenantId], references: [id])
+  branchId      String?
+  branch        Branch?   @relation(fields: [branchId], references: [id])
+  
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  products  Product[]
+
+  @@unique([name, tenantId])
+}
+
+model Ingredient {
+  id            String   @id @default(cuid())
+  name          String
+  stock         Float    @default(0) // Untuk F&B bisa desimal (misal 1.5 kg)
+  unit          String   // gr, ml, pcs, kg
+  costPerUnit   Decimal  @db.Decimal(10, 2)
+  tenantId      String
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  recipes       Recipe[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([name, tenantId])
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  image       String?
+  isAvailable Boolean  @default(true)
+  
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  recipes     Recipe[]
+  transactionItems TransactionItem[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Recipe {
+  id            String     @id @default(cuid())
+  productId     String
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ingredientId  String
+  ingredient    Ingredient @relation(fields: [ingredientId], references: [id])
+  quantity      Float      // Jumlah bahan yang digunakan per 1 produk
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  totalAmount   Decimal           @db.Decimal(10, 2)
+  paymentMethod String            // CASH, QRIS, DEBIT
+  type          TransactionType   @default(OFFLINE)
+  status        TransactionStatus @default(COMPLETED)
+  
+  tenantId      String
+  tenant        Tenant            @relation(fields: [tenantId], references: [id])
+  branchId      String?
+  branch        Branch?           @relation(fields: [branchId], references: [id])
+  
+  items         TransactionItem[]
+  createdAt     DateTime          @default(now())
+}
+
+model TransactionItem {
+  id            String      @id @default(cuid())
+  transactionId String
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product     @relation(fields: [productId], references: [id])
+  quantity      Int
+  priceAtTime   Decimal     @db.Decimal(10, 2)
+}
+
+model OrderIntent {
+  id                String   @id @default(cuid())
+  customerName      String
+  customerWhatsapp  String
+  totalAmount       Decimal  @db.Decimal(10, 2)
+  orderDetails      Json     // Menyimpan ringkasan order saat klik WA
+  
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  createdAt         DateTime @default(now())
+}
