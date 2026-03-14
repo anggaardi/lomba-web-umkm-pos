@@ -1,4 +1,4 @@
-import { centralPrisma, getTenantPrisma } from "@/lib/prisma";
+import { centralPrisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import MarketplaceUI from "@/components/marketplace/MarketplaceUI";
 

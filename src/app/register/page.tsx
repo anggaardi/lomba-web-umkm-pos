@@ -49,7 +49,7 @@ export default function RegisterPage() {
       } else {
         router.push("/login?registered=true");
       }
-    } catch (_err) {
+    } catch {
       setError("Terjadi kesalahan sistem");
     } finally {
       setIsLoading(false);

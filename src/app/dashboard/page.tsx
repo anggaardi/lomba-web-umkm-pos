@@ -19,6 +19,10 @@ import {
 export default async function DashboardPage() {
   const session = await getCurrentSession();
 
+  if (!session) {
+    redirect("/login");
+  }
+
   const isSuperAdmin = session.user.role === "SUPER_ADMIN";
   
   // 1. Ambil data Tenant untuk Owner
@@ -78,7 +82,7 @@ export default async function DashboardPage() {
             </Link>
           )}
         </div>
-        <p className="text-gray-500">
+        <p className="text-gray-600 font-medium">
           {isSuperAdmin 
             ? "Ringkasan performa platform UMKM-Flow hari ini." 
             : `Kelola bisnis ${tenant?.name || "UMKM"} Anda dari sini.`}
@@ -98,7 +102,7 @@ export default async function DashboardPage() {
                 {stat.trendUp ? <ArrowUpRight className="ml-1 h-3 w-3" /> : <ArrowDownRight className="ml-1 h-3 w-3" />}
               </div>
             </div>
-            <p className="text-sm font-medium text-gray-500">{stat.label}</p>
+            <p className="text-sm font-semibold text-gray-600">{stat.label}</p>
             <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
           </div>
         ))}
@@ -125,7 +129,7 @@ export default async function DashboardPage() {
                     </div>
                     <div>
                       <p className="font-bold text-gray-900">Kedai Kopi Senja</p>
-                      <p className="text-xs text-gray-500">Mendaftar pada 5 Maret 2026</p>
+                      <p className="text-xs text-gray-600 font-medium">Mendaftar pada 5 Maret 2026</p>
                     </div>
                   </div>
                   <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full">Active</span>
@@ -137,12 +141,15 @@ export default async function DashboardPage() {
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="p-4 bg-gray-50 rounded-full mb-4">
-                  <ShoppingCart className="h-8 w-8 text-gray-300" />
+                  <ShoppingCart className="h-8 w-8 text-gray-400" />
                 </div>
-                <p className="text-gray-500">Belum ada transaksi hari ini.</p>
-                <button className="mt-4 text-sm font-bold text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition-all">
-                  Mulai Jualan
-                </button>
+                <p className="text-gray-600 font-bold">Belum ada transaksi hari ini.</p>
+                <Link
+                  href="/dashboard/pos"
+                  className="mt-4 inline-flex items-center text-sm font-bold text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition-all"
+                >
+                  Mulai Jualan di POS
+                </Link>
               </div>
             )}
           </div>
@@ -171,16 +178,16 @@ export default async function DashboardPage() {
               </>
             ) : (
               <>
-                <button className="w-full flex items-center p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors text-sm font-medium text-left">
-                  <Package className="h-5 w-5 mr-3 text-blue-600" />
+                <button className="w-full flex items-center p-3 rounded-lg border border-gray-100 hover:bg-blue-50 hover:border-blue-100 transition-all text-sm font-bold text-gray-800 text-left group">
+                  <Package className="h-5 w-5 mr-3 text-blue-600 group-hover:scale-110 transition-transform" />
                   Tambah Produk Baru
                 </button>
-                <button className="w-full flex items-center p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors text-sm font-medium text-left">
-                  <Users className="h-5 w-5 mr-3 text-blue-600" />
+                <button className="w-full flex items-center p-3 rounded-lg border border-gray-100 hover:bg-blue-50 hover:border-blue-100 transition-all text-sm font-bold text-gray-800 text-left group">
+                  <Users className="h-5 w-5 mr-3 text-blue-600 group-hover:scale-110 transition-transform" />
                   Undang Staff Kasir
                 </button>
-                <button className="w-full flex items-center p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors text-sm font-medium text-left">
-                  <BarChart3 className="h-5 w-5 mr-3 text-blue-600" />
+                <button className="w-full flex items-center p-3 rounded-lg border border-gray-100 hover:bg-blue-50 hover:border-blue-100 transition-all text-sm font-bold text-gray-800 text-left group">
+                  <BarChart3 className="h-5 w-5 mr-3 text-blue-600 group-hover:scale-110 transition-transform" />
                   Buka Laporan Laba Rugi
                 </button>
               </>

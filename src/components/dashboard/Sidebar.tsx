@@ -2,37 +2,56 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  Package, 
-  ShoppingCart, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  MonitorSmartphone,
+  Box,
+  ShoppingCart,
+  BarChart3,
   Settings,
-  Store,
   LogOut,
   Building2,
-  CreditCard,
-  ShieldCheck
+  ChevronLeft,
+  ChevronRight,
+  ScrollText,
+  Code2,
+  GitBranch,
+  Store,
+  Flag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { signOut, useSession } from "next-auth/react";
+import { useState } from "react";
 
-export function Sidebar() {
+import { Session } from "next-auth";
+
+export function Sidebar({
+  session: initialSession,
+}: {
+  session?: Session | null;
+}) {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: clientSession } = useSession();
+  const session = initialSession || clientSession;
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
 
   const adminMenu = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: Building2, label: "Manajemen Tenant", href: "/dashboard/tenants" },
-    { icon: CreditCard, label: "Langganan", href: "/dashboard/subscriptions" },
-    { icon: ShieldCheck, label: "Sistem", href: "/dashboard/system" },
+    { icon: Building2, label: "Corporate", href: "/dashboard/tenants" },
+    { icon: ScrollText, label: "System Log", href: "/dashboard/subscriptions" },
+    { icon: Code2, label: "API Log", href: "/dashboard/system" },
+    { type: "header", label: "CORPORATE MANAGEMENT" },
+    { icon: GitBranch, label: "Branches", href: "#" },
+    { icon: Store, label: "Merchants", href: "#" },
+    { icon: Flag, label: "Feature Flags", href: "#" },
   ];
 
   const tenantMenu = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: Package, label: "Inventory", href: "/dashboard/inventory" },
+    { icon: MonitorSmartphone, label: "POS Kasir", href: "/dashboard/pos" },
+    { icon: Box, label: "Inventory", href: "/dashboard/inventory" },
     { icon: ShoppingCart, label: "Transaksi", href: "/dashboard/transactions" },
     { icon: BarChart3, label: "Laporan", href: "/dashboard/reports" },
   ];
@@ -40,60 +59,133 @@ export function Sidebar() {
   const menuItems = isSuperAdmin ? adminMenu : tenantMenu;
 
   return (
-    <div className="flex h-full w-64 flex-col bg-white border-r">
-      <div className="flex h-16 items-center px-6 border-b">
-        <Store className="h-6 w-6 text-blue-600 mr-2" />
-        <span className="text-xl font-bold tracking-tight">UMKM-Flow</span>
-      </div>
-      
-      <div className="px-6 py-2">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-          {isSuperAdmin ? "Platform Owner" : "Shop Management"}
-        </p>
+    <aside
+      className={cn(
+        "relative flex h-screen flex-col bg-[#FF724C] transition-all duration-300 ease-in-out",
+        isCollapsed ? "w-20" : "w-64"
+      )}
+    >
+      {/* Logo Section */}
+      <div
+        className={cn(
+          "flex h-20 items-center overflow-hidden mb-6 mt-4",
+          isCollapsed ? "justify-center px-0" : "px-6"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white font-bold text-xl">
+            P
+          </div>
+          {!isCollapsed && (
+            <span className="text-xl font-bold text-white truncate">
+              POS System
+            </span>
+          )}
+        </div>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3 py-2">
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
+      {/* Navigation */}
+      <nav className="flex-1 space-y-2 py-4">
+        {menuItems.map((item, index) => {
+          if ("type" in item && item.type === "header") {
+            return (
+              !isCollapsed && (
+                <div key={index} className="px-6 py-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-white/50">
+                    {item.label}
+                  </p>
+                </div>
+              )
+            );
+          }
+
+          const isActive = "href" in item && pathname === item.href;
+          if (!("href" in item)) return null;
+
           return (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
               className={cn(
-                "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                isActive 
-                  ? "bg-blue-50 text-blue-700" 
-                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                "group relative flex items-center py-3 transition-all duration-300",
+                isCollapsed ? "justify-center px-0" : "px-6",
+                isActive
+                  ? "bg-[#FFEFEB] text-[#FF724C] rounded-l-full ml-4 shadow-lg"
+                  : "text-white hover:bg-[#813531]/20"
               )}
             >
-              <item.icon className={cn(
-                "mr-3 h-5 w-5",
-                isActive ? "text-blue-700" : "text-gray-400 group-hover:text-gray-500"
-              )} />
-              {item.label}
+              {/* Active indicator bar or shape if needed, but image shows rounded white background */}
+              {item.icon && (
+                <item.icon
+                  className={cn(
+                    "h-6 w-6 transition-colors",
+                    isActive
+                      ? "text-[#FF724C]"
+                      : "text-white group-hover:scale-110",
+                    !isCollapsed && "mr-4"
+                  )}
+                />
+              )}
+
+              {!isCollapsed && (
+                <span className="text-sm font-semibold tracking-wide">
+                  {item.label}
+                </span>
+              )}
+
+              {/* Tooltip for collapsed mode */}
+              {isCollapsed && item.label && (
+                <div className="absolute left-full ml-2 hidden rounded bg-[#813531] px-2 py-1 text-xs text-white group-hover:block whitespace-nowrap z-50">
+                  {item.label}
+                </div>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t space-y-1">
+      {/* Footer Actions */}
+      <div
+        className={cn(
+          "border-t border-white/20 p-4 space-y-2",
+          isCollapsed ? "flex flex-col items-center" : ""
+        )}
+      >
         <Link
           href="/dashboard/settings"
           className={cn(
-            "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-700 hover:bg-gray-100"
+            "flex items-center text-white/80 hover:text-white transition-colors py-2",
+            isCollapsed ? "justify-center" : "px-2"
           )}
         >
-          <Settings className="mr-3 h-5 w-5 text-gray-400" />
-          Settings
+          <Settings className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
+          {!isCollapsed && <span className="text-sm">Settings</span>}
         </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors text-red-600 hover:bg-red-50"
+          className={cn(
+            "flex w-full items-center text-white/80 hover:text-white transition-colors py-2",
+            isCollapsed ? "justify-center" : "px-2"
+          )}
         >
-          <LogOut className="mr-3 h-5 w-5" />
-          Keluar
+          <LogOut className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
+          {!isCollapsed && <span className="text-sm">Keluar</span>}
+        </button>
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={cn(
+            "flex w-full items-center text-white/80 hover:text-white transition-colors py-2 mt-2",
+            isCollapsed ? "justify-center" : "px-2"
+          )}
+        >
+          {isCollapsed ? (
+            <ChevronRight className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
+          ) : (
+            <ChevronLeft className={cn("h-5 w-5", !isCollapsed && "mr-3")} />
+          )}
+          {!isCollapsed && <span className="text-sm">Tutup Sidebar</span>}
         </button>
       </div>
-    </div>
+    </aside>
   );
 }

@@ -14,7 +14,8 @@ const registerSchema = z.object({
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, email, password, shopName, whatsappNumber } = registerSchema.parse(body);
+    const { name, email, password, shopName, whatsappNumber } =
+      registerSchema.parse(body);
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -29,7 +30,10 @@ export async function POST(req: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const slug = shopName.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
+    const slug = shopName
+      .toLowerCase()
+      .replace(/ /g, "-")
+      .replace(/[^\w-]+/g, "");
     const dbSchema = `tenant_${slug.replace(/-/g, "_")}`; // Format schema name
 
     // Create Tenant and User in a transaction
@@ -40,6 +44,10 @@ export async function POST(req: Request) {
           slug,
           dbSchema,
           whatsappNumber,
+          settings: {
+            posTaxPercent: 11,
+            posServiceChargePercent: 5,
+          },
         },
       });
 
@@ -76,7 +84,7 @@ export async function POST(req: Request) {
       { message: "Registrasi berhasil", userId: result.user.id },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { message: error.issues[0].message },

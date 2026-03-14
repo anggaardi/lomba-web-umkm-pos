@@ -46,7 +46,7 @@ export default function LoginPage() {
         router.push("/dashboard");
         router.refresh();
       }
-    } catch (_err) {
+    } catch {
       setError("Terjadi kesalahan sistem");
     } finally {
       setIsLoading(false);

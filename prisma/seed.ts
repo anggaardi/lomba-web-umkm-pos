@@ -38,7 +38,11 @@ async function main() {
       dbSchema: "tenant_kopi_senja", // Schema Name
       whatsappNumber: "628123456789",
       address: "Jl. Merdeka No. 123, Jakarta",
-    },
+      settings: {
+        posTaxPercent: 11,
+        posServiceChargePercent: 5,
+      },
+    } as any,
   });
 
   console.log("✅ Sample Tenant created:", tenant.name);
@@ -81,6 +85,22 @@ async function main() {
   });
 
   console.log("✅ Tenant Admin created:", tenantAdmin.email);
+
+  // 4.1 Create Cashier (Staff Kasir)
+  const cashier = await prisma.user.upsert({
+    where: { email: "kasir@kopisenja.com" },
+    update: {},
+    create: {
+      email: "kasir@kopisenja.com",
+      name: "Kasir Kedai Senja",
+      password: hashedPassword,
+      role: Role.STAFF,
+      tenantId: tenant.id,
+      branchId: branch.id,
+    },
+  });
+
+  console.log("✅ Cashier created:", cashier.email);
 
   // 5. Create Sample Products
   const products = await prisma.product.createMany({

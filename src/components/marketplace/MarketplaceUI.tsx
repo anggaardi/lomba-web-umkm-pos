@@ -7,7 +7,7 @@ interface Product {
   id: string;
   name: string;
   description: string | null;
-  price: any; // Decimal from Prisma
+  price: string | number; // Decimal from Prisma
   image: string | null;
 }
 
@@ -34,10 +34,6 @@ export default function MarketplaceUI({ tenant, initialProducts }: { tenant: Ten
       }
       return [...prev, { product, quantity: 1 }];
     });
-  };
-
-  const removeFromCart = (productId: string) => {
-    setCart((prev) => prev.filter((item) => item.product.id !== productId));
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + (Number(item.product.price) * item.quantity), 0);
@@ -116,7 +112,7 @@ export default function MarketplaceUI({ tenant, initialProducts }: { tenant: Ten
       </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16 px-4">
+      <section className="bg-linear-to-r from-blue-600 to-blue-700 text-white py-16 px-4">
         <div className="max-w-7xl mx-auto text-center">
           <h2 className="text-4xl font-black mb-4 leading-tight">Selamat Datang di {tenant.name}</h2>
           <p className="text-blue-100 text-lg max-w-2xl mx-auto font-medium opacity-90">

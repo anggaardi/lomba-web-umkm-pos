@@ -65,10 +65,9 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         // Pastikan session.user selalu memiliki id, role, dan tenantId
-        session.user.id = (token as any).id as string;
-        session.user.role = (token as any).role as string;
-        session.user.tenantId =
-          (token as any).tenantId !== undefined ? ((token as any).tenantId as string | null) : null;
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.tenantId = token.tenantId ?? null;
       }
       return session;
     },

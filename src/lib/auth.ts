@@ -2,6 +2,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import type { Role } from "@prisma/client";
+import { NextResponse } from "next/server";
+
+export class AuthError extends Error {
+  constructor(public message: string, public status: number = 401) {
+    super(message);
+    this.name = "AuthError";
+  }
+
+  toResponse() {
+    return NextResponse.json({ error: this.message }, { status: this.status });
+  }
+}
 
 /**
  * Mengambil session NextAuth saat ini (server-side).
@@ -33,14 +45,13 @@ export async function getCurrentUser() {
 }
 
 /**
- * Wajib login: melempar error jika tidak ada user yang login.
- * Cocok dipakai di server component atau route handler yang butuh auth.
+ * Wajib login: melempar AuthError jika tidak ada user yang login.
  */
 export async function requireUser() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("Unauthorized: user not authenticated");
+    throw new AuthError("Unauthorized: user not authenticated", 401);
   }
 
   return user;
@@ -56,11 +67,11 @@ export async function requireTenant() {
   const user = await requireUser();
 
   if (!user.tenantId || !user.tenant) {
-    throw new Error("Forbidden: user has no tenant");
+    throw new AuthError("Forbidden: user has no tenant", 403);
   }
 
   if (!user.tenant.isActive) {
-    throw new Error("Forbidden: tenant is inactive");
+    throw new AuthError("Forbidden: tenant is inactive", 403);
   }
 
   return {
@@ -71,18 +82,25 @@ export async function requireTenant() {
 
 /**
  * Wajib memiliki role tertentu (single atau multiple).
- * Contoh:
- * - await requireRole("SUPER_ADMIN")
- * - await requireRole(["ADMIN", "SUPER_ADMIN"])
  */
 export async function requireRole(allowed: Role | Role[]) {
   const user = await requireUser();
   const allowedRoles = Array.isArray(allowed) ? allowed : [allowed];
 
   if (!allowedRoles.includes(user.role)) {
-    throw new Error("Forbidden: insufficient role");
+    throw new AuthError("Forbidden: insufficient role", 403);
   }
 
   return user;
 }
 
+/**
+ * Helper to handle auth errors in route handlers
+ */
+export function handleAuthError(error: unknown) {
+  if (error instanceof AuthError) {
+    return error.toResponse();
+  }
+  console.error("Internal Error:", error);
+  return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+}

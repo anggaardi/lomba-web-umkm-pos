@@ -12,12 +12,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+/* 
+  Komentari atau hapus dark mode jika aplikasi belum sepenuhnya mendukung dark mode 
+  agar tidak terjadi teks putih di atas background putih.
+*/
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
+} */
 
 body {
   background: var(--background);

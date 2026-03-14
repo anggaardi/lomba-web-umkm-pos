@@ -1,5 +1,3 @@
-dan edit data tim, judul, dsb.
-
 Dokumentasi Konsep Sistem (Draft .md)
 Kamu bisa copy–paste isi di bawah ini ke file misalnya documentation.md / PROPOSAL_WEBDEV_FUSHIONTECHXKOMIK2026.md dan edit data tim, judul, dsb.
 SmartBizFNB – Platform Manajemen UMKM F&B Multi-Tenant
@@ -18,7 +16,6 @@ UMKM di sektor Food & Beverage (F&B) sering menghadapi masalah dalam pengelolaan
     Secure: pemisahan data antar tenant yang ketat dan aman.
 
 2. Tujuan Sistem
-
     Membantu UMKM F&B mengelola operasional harian
         Pencatatan pesanan (POS) yang rapi dan real-time.
         Pengelolaan menu, harga, diskon, dan kategori produk.
@@ -47,15 +44,16 @@ Multi-tenant berarti satu aplikasi dan satu deployment dapat digunakan oleh bany
 3.2 Prinsip Utama Multi-Tenant di Sistem Ini
 
     Isolasi Data
-        Setiap record penting (tenant, outlet, user, product, order, inventory, dll.) memiliki kolom tenant_id.
-        Query selalu difilter dengan tenant_id dari sesi/login.
+        Setiap record penting (Tenant, Branch, User, Product, Transaction, Ingredient, dll.) memiliki kolom tenantId.
+        Query selalu difilter dengan tenantId dari sesi/login (Server-Side Enforcement).
         Tidak ada akses lintas tenant dalam query normal.
     Isolasi Akses (Auth & Role)
         User hanya bisa mengakses data tenant tempat dia terdaftar.
-        Role (owner, manager, kasir, staf dapur) membatasi fitur yang bisa diakses.
-    Konfigurasi Per Tenant
-        Pengaturan pajak, service charge, branding struk, dan template QR bisa berbeda tiap tenant.
-        Rencana ke depan: paket harga/plan per tenant (basic/premium).
+        Role (SUPER_ADMIN, ADMIN, STAFF) membatasi fitur yang bisa diakses.
+    Konfigurasi Dinamis Per Tenant (Smart Settings)
+        Setiap Tenant memiliki konfigurasi unik yang disimpan dalam kolom JSON `settings`.
+        Konfigurasi meliputi: Pajak (PPN), Service Charge, serta kustomisasi Struk (Header/Footer).
+        Data konfigurasi ditarik secara otomatis saat Kasir (STAFF) membuka POS berdasarkan identitas tenant mereka.
 
 4. Fitur Utama (Minimal Wajib Ada)
 
@@ -338,3 +336,76 @@ Fitur wajib: multi-tenant auth + role, POS dasar, manajemen menu, inventory terh
 Fitur “smart”: rekomendasi restock, antrian dapur, QR order, insight penjualan.
 Pencegahan konflik kritis: semua tabel pakai tenant_id, query selalu terfilter, transaksi database untuk order & stok, middleware auth/role yang ketat, audit log sederhana.
 Kalau kamu mau, langkah berikutnya aku bisa: (1) menyesuaikan struktur di atas dengan stack yang sudah kamu pakai di project ini (Next.js, Prisma, dsb), atau (2) bikin versi singkat khusus untuk proposal PDF dan versi teknis khusus dokumentasi sistem.
+
+
+# Dokumentasi Fitur Finansial: Diskon, Pajak, & Service Charge
+Dokumen ini merinci logika perhitungan finansial dan skenario operasional untuk platform SmartBizFNB.
+
+## 1. Komponen Finansial
+
+### 1.1 Pajak (Tax)
+*   **Default**: PPN 11% (dapat diatur per tenant).
+*   **Metode**: 
+    *   *Tax-Exclusive*: Pajak ditambahkan di atas subtotal (Harga + Pajak).
+    *   *Tax-Inclusive*: Pajak sudah termasuk dalam harga jual (Harga Nett).
+
+### 1.2 Biaya Layanan (Service Charge)
+*   **Default**: 5% (dapat diatur per tenant).
+*   **Karakteristik**: Dihitung dari subtotal sebelum pajak.
+
+### 1.3 Diskon (Discount)
+*   **Diskon Per Item**: Potongan harga untuk menu spesifik.
+*   **Diskon Global**: Potongan harga untuk total seluruh transaksi.
+*   **Tipe**: Persentase (%) atau Nominal (Rp).
+
+---
+
+## 2. Rumus Perhitungan Standar
+Urutan perhitungan sangat penting untuk menghindari kesalahan nilai:
+
+1.  **Gross Subtotal**: `Sum(Price * Quantity)`
+2.  **Item Discount**: `Sum(Item_Discount_Amount)`
+3.  **Net Subtotal**: `Gross Subtotal - Item Discount`
+4.  **Service Charge**: `Net Subtotal * Service_Charge_%`
+5.  **Taxable Amount**: `Net Subtotal + Service Charge`
+6.  **Tax (PPN)**: `Taxable Amount * Tax_%`
+7.  **Global Discount**: `(Net Subtotal + Service Charge + Tax) * Global_Discount_%` (atau nominal)
+8.  **Grand Total**: `(Taxable Amount + Tax) - Global Discount`
+
+---
+
+## 3. Skenario Operasional (Logic Test Cases)
+
+### 3.1 Skenario Diskon Bertumpuk
+**Kasus**: Pelanggan membeli Kopi (Rp 20.000) dengan diskon item 10%, ditambah diskon member (global) 5%. Pajak 11% dan Service 5%.
+*   **Harga Kopi setelah diskon item**: 20.000 - 2.000 = 18.000.
+*   **Service Charge (5%)**: 18.000 * 5% = 900.
+*   **Pajak (11%)**: (18.000 + 900) * 11% = 2.079.
+*   **Subtotal sebelum diskon global**: 18.000 + 900 + 2.079 = 20.979.
+*   **Diskon Global (5%)**: 20.979 * 5% = 1.049.
+*   **Grand Total**: 20.979 - 1.049 = **19.930**.
+
+### 3.2 Skenario Stok Menipis (Race Condition)
+**Kasus**: Stok Susu sisa 1 liter (cukup untuk 4 cup). Dua kasir menekan tombol "Bayar" secara bersamaan untuk pesanan masing-masing 3 cup.
+*   **Proses**: Sistem menggunakan *Database Transaction* (Prisma `$transaction`).
+*   **Hasil**: Kasir pertama berhasil (stok jadi 0.25L). Kasir kedua gagal dengan pesan: *"Stok bahan baku tidak mencukupi untuk pesanan ini"*.
+*   **Tujuan**: Menjamin integritas data inventaris di lingkungan multi-user.
+
+### 3.3 Skenario Tax-Inclusive (Harga Nett)
+**Kasus**: Menu "Nasi Goreng" harga Rp 25.000 (Sudah termasuk Pajak 11%).
+*   **Dasar Pengenaan Pajak (DPP)**: 25.000 / 1.11 = 22.522.
+*   **Nilai Pajak**: 25.000 - 22.522 = 2.478.
+*   **Tujuan**: Laporan pendapatan (Revenue) dicatat sebesar 22.522, sedangkan 2.478 dicatat sebagai Hutang Pajak.
+
+### 3.4 Skenario Pembulatan (Rounding)
+**Kasus**: Total transaksi menghasilkan angka desimal seperti Rp 19.930,50.
+*   **Kebijakan**: Pembulatan ke bawah (Floor) atau ke atas (Ceiling) ke kelipatan Rp 100 terdekat sesuai pengaturan Tenant.
+*   **Hasil**: Rp 19.900 atau Rp 20.000.
+
+### 3.5 Skenario Void (Pembatalan Transaksi)
+**Kasus**: Transaksi sudah selesai tapi pelanggan ingin membatalkan karena salah input.
+*   **Proses**: Admin melakukan Void.
+*   **Dampak**: 
+    1. Status transaksi menjadi `CANCELLED`.
+    2. Stok bahan baku yang terpotong otomatis dikembalikan (Restored) berdasarkan `Recipe`.
+    3. Log aktivitas mencatat: *"User [X] melakukan Void pada Transaksi [Y] - Alasan: Salah Input"*.
