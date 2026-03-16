@@ -35,15 +35,16 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, unit, costPerUnit, initialStock } = validation.data;
+    const { name, unit, initialStock, initialPrice } = validation.data;
 
     const ingredient = await prisma.$transaction(async (tx) => {
       const newIngredient = await tx.ingredient.create({
         data: {
           name,
           unit,
-          costPerUnit: costPerUnit.toString(), // Use string for Decimal precision
           stock: initialStock || 0,
+          averageCostPerUnit: initialStock && initialPrice ? (initialPrice / initialStock) : 0,
+          lastPurchasePrice: initialStock && initialPrice ? (initialPrice / initialStock) : null,
           tenantId: tenant.id,
         },
       });
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
             ingredientId: newIngredient.id,
             tenantId: tenant.id,
             quantity: initialStock,
+            purchasePrice: initialPrice || 0,
             type: "IN",
             source: "PURCHASE",
             notes: "Stok awal saat pembuatan data",

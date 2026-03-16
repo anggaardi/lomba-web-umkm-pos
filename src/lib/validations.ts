@@ -5,8 +5,29 @@ import { StockMovementType, StockMovementSource } from "@prisma/client";
 export const ingredientCreateSchema = z.object({
   name: z.string().min(1, "Nama bahan baku wajib diisi").max(100),
   unit: z.string().min(1, "Satuan wajib diisi").max(20),
-  costPerUnit: z.coerce.number().positive("Harga per satuan harus positif"),
-  initialStock: z.coerce.number().nonnegative("Stok awal tidak boleh negatif").optional(),
+  initialStock: z.coerce
+    .number()
+    .nonnegative("Stok awal tidak boleh negatif")
+    .optional(),
+  initialPrice: z.coerce
+    .number()
+    .nonnegative("Harga awal tidak boleh negatif")
+    .optional(),
+});
+
+export const packagingCreateSchema = z.object({
+  name: z.string().min(1, "Nama kemasan wajib diisi").max(50),
+  conversionValue: z.coerce.number().positive("Nilai konversi harus positif"),
+  ingredientId: z.string().min(1, "Ingredient ID wajib diisi"),
+});
+
+export const ingredientPurchaseSchema = z.object({
+  ingredientId: z.string().min(1, "Ingredient ID wajib diisi"),
+  packagingId: z.string().optional(), // Jika null, berarti input manual conversion
+  customConversionValue: z.coerce.number().positive().optional(),
+  purchaseQty: z.coerce.number().positive("Jumlah beli harus positif"),
+  totalPrice: z.coerce.number().positive("Total harga harus positif"),
+  notes: z.string().max(255).optional(),
 });
 
 export const ingredientUpdateStockSchema = z.object({

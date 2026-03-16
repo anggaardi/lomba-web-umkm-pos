@@ -62,6 +62,7 @@ model Tenant {
   categories      Category[]
   products        Product[]
   ingredients     Ingredient[]
+  packagings      IngredientPackaging[]
   stockMovements  StockMovement[]
   transactions    Transaction[]
   orderIntents    OrderIntent[]
@@ -153,17 +154,39 @@ model Category {
 model Ingredient {
   id            String   @id @default(cuid())
   name          String
-  stock         Float    @default(0) // Untuk F&B bisa desimal (misal 1.5 kg)
-  unit          String   // gr, ml, pcs, kg
-  costPerUnit   Decimal  @db.Decimal(10, 2)
+  stock         Float    @default(0) // Satuan Terkecil (Base Unit)
+  unit          String   // ml, gr, pcs, etc
+  
+  // Fitur Smart
+  averageCostPerUnit Decimal @db.Decimal(10, 2) @default(0) // Harga rata-rata per ml/gr
+  lastPurchasePrice  Decimal? @db.Decimal(10, 2) // Harga beli terakhir (per base unit)
+  
   tenantId      String
   tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  
+  packagings    IngredientPackaging[]
   recipes       Recipe[]
   movements     StockMovement[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@unique([name, tenantId])
+}
+
+model IngredientPackaging {
+  id            String     @id @default(cuid())
+  name          String     // "Botol Kecil", "Karton Besar"
+  conversionValue Float      // 100, 1000
+  
+  ingredientId  String
+  ingredient    Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  tenantId      String
+  tenant        Tenant     @relation(fields: [tenantId], references: [id])
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([name, ingredientId])
 }
 
 model StockMovement {
@@ -173,9 +196,14 @@ model StockMovement {
   tenantId      String
   tenant        Tenant              @relation(fields: [tenantId], references: [id])
   
-  quantity      Float               // Jumlah mutasi
+  quantity      Float               // Jumlah mutasi (dalam Base Unit)
   type          StockMovementType   // IN atau OUT
   source        StockMovementSource // SALE, VOID, ADJUSTMENT, etc
+  
+  // Fitur Audit & Multi-UOM
+  purchaseQty   Float?              // Misal: 5 (pcs)
+  purchaseUnit  String?             // Misal: "Botol Kecil"
+  purchasePrice Decimal?            @db.Decimal(10, 2) // Total harga beli saat itu
   
   referenceId   String?             // ID Transaksi atau ID Penyesuaian
   notes         String?

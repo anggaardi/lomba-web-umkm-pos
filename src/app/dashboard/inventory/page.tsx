@@ -10,10 +10,13 @@ export default async function InventoryPage() {
   try {
     const { tenant } = await requireTenant();
 
-    // 1. Fetch Ingredients
+    // 1. Fetch Ingredients with Packagings
     const ingredients = await prisma.ingredient.findMany({
       where: {
         tenantId: tenant.id,
+      },
+      include: {
+        packagings: true,
       },
       orderBy: {
         name: "asc",
@@ -43,8 +46,14 @@ export default async function InventoryPage() {
       name: ing.name,
       stock: ing.stock,
       unit: ing.unit,
-      costPerUnit: Number(ing.costPerUnit),
+      averageCostPerUnit: Number(ing.averageCostPerUnit),
+      lastPurchasePrice: ing.lastPurchasePrice ? Number(ing.lastPurchasePrice) : null,
       updatedAt: ing.updatedAt.toISOString(),
+      packagings: ing.packagings.map(p => ({
+        id: p.id,
+        name: p.name,
+        conversionValue: p.conversionValue
+      })),
     }));
 
     // Format Products for client
