@@ -69,11 +69,11 @@ export default function RecipeDetailClient({
     <div className="min-h-screen bg-[#F1F5F9]/50 pb-16">
       <div className="max-w-[1400px] mx-auto p-4 sm:p-8 space-y-8">
         <button 
-          onClick={() => router.back()}
+          onClick={() => router.push("/dashboard/recipes")}
           className="flex items-center gap-2 text-slate-500 hover:text-[#FF724C] transition-colors font-bold text-sm group"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-          Kembali ke Inventaris
+          Kembali ke Daftar Resep
         </button>
 
         {/* Product Card */}
@@ -121,7 +121,10 @@ export default function RecipeDetailClient({
           </div>
           
           <div className="flex flex-row gap-3 w-full md:w-auto shrink-0">
-            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all border border-slate-200">
+            <button 
+              onClick={() => router.push(`/dashboard/recipes/${product.id}/edit`)}
+              className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all border border-slate-200"
+            >
               <Edit className="w-4 h-4" /> Edit Resep
             </button>
             <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-[#FF724C] text-white rounded-xl text-sm font-bold hover:bg-[#E65A33] transition-all shadow-lg shadow-[#FF724C]/20">

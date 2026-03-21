@@ -44,31 +44,45 @@ interface RecipeIngredient {
   cost: number;
 }
 
+export interface InitialRecipeData {
+  id: string;
+  name: string;
+  categoryId: string;
+  basePrice: number;
+  image: string | null;
+  preparationMethod: string;
+  recipeItems: RecipeIngredient[];
+}
+
 interface RecipeRegistrationClientProps {
   ingredients: Ingredient[];
   categories: Category[];
+  initialData?: InitialRecipeData;
 }
 
 export default function RecipeRegistrationClient({
   ingredients,
   categories,
+  initialData,
 }: RecipeRegistrationClientProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Form State
-  const [name, setName] = useState("");
-  const [sku, setSku] = useState("REC-001");
-  const [categoryId, setCategoryId] = useState("");
-  const [basePrice, setBasePrice] = useState<number>(0);
-  const [image, setImage] = useState<string | null>(null);
-  const [preparationMethod, setPreparationMethod] = useState("");
-  const [recipeItems, setRecipeItems] = useState<RecipeIngredient[]>([
-    { ingredientId: "", quantity: 0, unit: "", cost: 0 },
-  ]);
+  const [name, setName] = useState(initialData?.name || "");
+  const [categoryId, setCategoryId] = useState(initialData?.categoryId || "");
+  const [basePrice, setBasePrice] = useState<number>(initialData?.basePrice || 0);
+  const [image, setImage] = useState<string | null>(initialData?.image || null);
+  const [preparationMethod, setPreparationMethod] = useState(initialData?.preparationMethod || "");
+  const [recipeItems, setRecipeItems] = useState<RecipeIngredient[]>(
+    initialData?.recipeItems?.length ? initialData.recipeItems : [{ ingredientId: "", quantity: 0, unit: "", cost: 0 }]
+  );
   const [laborEstimate, setLaborEstimate] = useState<number>(5000);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
+  const [basePriceDisplay, setBasePriceDisplay] = useState<string>(
+    initialData?.basePrice ? initialData.basePrice.toLocaleString("id-ID") : ""
+  );
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [localCategories, setLocalCategories] = useState(categories);
@@ -287,12 +301,16 @@ export default function RecipeRegistrationClient({
         throw new Error("Mohon tambahkan setidaknya satu bahan ke dalam resep");
       }
 
-      const res = await fetch("/api/inventory/recipes/register", {
-        method: "POST",
+      const endpoint = initialData 
+        ? `/api/inventory/recipes/${initialData.id}` 
+        : "/api/inventory/recipes/register";
+      const method = initialData ? "PATCH" : "POST";
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name,
-          sku,
           categoryId,
           price: basePrice,
           image,
@@ -306,7 +324,7 @@ export default function RecipeRegistrationClient({
         throw new Error(data.error || "Gagal menyimpan resep");
       }
 
-      router.push("/dashboard/inventory");
+      router.push("/dashboard/recipes");
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Gagal menyimpan resep");
@@ -317,12 +335,12 @@ export default function RecipeRegistrationClient({
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="w-full max-w-[1400px] mx-auto space-y-8">
       {/* Header with Back Button and Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
-            href="/dashboard/inventory"
+            href="/dashboard/recipes"
             className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-slate-600 transition-all border border-transparent hover:border-slate-200"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -332,7 +350,7 @@ export default function RecipeRegistrationClient({
               <ChefHat className="w-6 h-6" />
             </div>
             <h1 className="text-xl font-bold text-slate-800 tracking-tight">
-              Add New Recipe
+              {initialData ? "Edit Recipe" : "Add New Recipe"}
             </h1>
           </div>
         </div>
@@ -360,10 +378,11 @@ export default function RecipeRegistrationClient({
       <div className="space-y-8">
         {/* Title Section */}
         <div className="space-y-1">
-          <h2 className="text-3xl font-bold text-slate-900">Recipe Details</h2>
+          <h2 className="text-3xl font-bold text-slate-900">Create Recipes</h2>
           <p className="text-slate-500 font-medium">
-            Create a new recipe by providing product information and ingredient
-            composition.
+            {initialData 
+              ? "Update product information and ingredient composition for this recipe."
+              : "Create a new recipe by providing product information and ingredient composition."}
           </p>
         </div>
 
@@ -380,7 +399,11 @@ export default function RecipeRegistrationClient({
           </div>
         )}
 
-        {/* Product Information Card */}
+        {/* Two-Column Desktop Layout Wrapper */}
+        <div className="flex flex-col xl:flex-row gap-8 items-start w-full">
+          {/* Left Column (Main Content) */}
+          <div className="w-full xl:w-[68%] space-y-8 flex flex-col">
+            {/* Product Information Card */}
         <div className="bg-white rounded-3xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-slate-100 p-8">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF724C]">
@@ -391,7 +414,7 @@ export default function RecipeRegistrationClient({
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-1 gap-10 xl:gap-8">
             <div className="space-y-6">
               <div className="space-y-2">
                 <label className="text-sm font-bold text-slate-700 ml-1">
@@ -406,74 +429,61 @@ export default function RecipeRegistrationClient({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">
-                    SKU
+              <div className="space-y-2">
+                <div className="flex items-center justify-between ml-1">
+                  <label className="text-sm font-bold text-slate-700">
+                    Category
                   </label>
-                  <input
-                    type="text"
-                    value={sku}
-                    onChange={(e) => setSku(e.target.value)}
-                    className="w-full bg-slate-50 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-medium text-base"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsManageCategoriesOpen(true)}
+                    className="text-[10px] font-black text-[#FF724C] hover:text-orange-700 uppercase tracking-wider"
+                  >
+                    Manage Category
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between ml-1">
-                    <label className="text-sm font-bold text-slate-700">
-                      Category
-                    </label>
+                {isAddingCategory ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Kategori baru..."
+                      className="flex-1 bg-slate-50 border-slate-100 rounded-2xl px-4 py-3 text-sm font-medium outline-none border focus:border-orange-500"
+                      autoFocus
+                    />
                     <button
-                      type="button"
-                      onClick={() => setIsManageCategoriesOpen(true)}
-                      className="text-[10px] font-black text-[#FF724C] hover:text-orange-700 uppercase tracking-wider"
+                      onClick={handleAddCategory}
+                      className="p-3 bg-[#FF724C] text-white rounded-xl hover:bg-orange-600 transition-colors"
                     >
-                      Manage Category
+                      <CheckCircle2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setIsAddingCategory(false)}
+                      className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
                     </button>
                   </div>
-                  {isAddingCategory ? (
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newCategoryName}
-                        onChange={(e) => setNewCategoryName(e.target.value)}
-                        placeholder="Kategori baru..."
-                        className="flex-1 bg-slate-50 border-slate-100 rounded-2xl px-4 py-3 text-sm font-medium outline-none border focus:border-orange-500"
-                        autoFocus
-                      />
-                      <button
-                        onClick={handleAddCategory}
-                        className="p-3 bg-[#FF724C] text-white rounded-xl hover:bg-orange-600 transition-colors"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setIsAddingCategory(false)}
-                        className="p-3 bg-slate-100 text-slate-500 rounded-xl hover:bg-slate-200 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                ) : (
+                  <div className="relative">
+                    <select
+                      value={categoryId}
+                      onChange={(e) => setCategoryId(e.target.value)}
+                      className="w-full bg-slate-50 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-medium text-base appearance-none cursor-pointer"
+                    >
+                      <option value="">Select Category</option>
+                      {localCategories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                      <Plus className="w-4 h-4 rotate-45" />
                     </div>
-                  ) : (
-                    <div className="relative">
-                      <select
-                        value={categoryId}
-                        onChange={(e) => setCategoryId(e.target.value)}
-                        className="w-full bg-slate-50 border-slate-100 rounded-2xl px-5 py-4 text-slate-900 focus:bg-white focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-medium text-base appearance-none cursor-pointer"
-                      >
-                        <option value="">Select Category</option>
-                        {localCategories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <Plus className="w-4 h-4 rotate-45" />
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -485,9 +495,17 @@ export default function RecipeRegistrationClient({
                     Rp
                   </span>
                   <input
-                    type="number"
-                    value={basePrice || ""}
-                    onChange={(e) => setBasePrice(Number(e.target.value))}
+                    type="text"
+                    inputMode="numeric"
+                    value={basePriceDisplay}
+                    onChange={(e) => {
+                      // Strip all non-digit characters
+                      const raw = e.target.value.replace(/[^0-9]/g, "");
+                      const numeric = Number(raw);
+                      setBasePrice(numeric);
+                      // Format with thousand separator (id-ID uses '.' as separator)
+                      setBasePriceDisplay(raw ? numeric.toLocaleString("id-ID") : "");
+                    }}
                     placeholder="0"
                     className="w-full bg-slate-50 border-slate-100 rounded-2xl pl-12 pr-5 py-4 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-orange-500/10 focus:border-orange-500 transition-all outline-none font-medium text-base"
                   />
@@ -495,7 +513,7 @@ export default function RecipeRegistrationClient({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 xl:hidden">
               <label className="text-sm font-bold text-slate-700 ml-1">
                 Recipe Image
               </label>
@@ -631,10 +649,10 @@ export default function RecipeRegistrationClient({
           </div>
         </div>
 
-        {/* Preparation Method and Cost Analysis */}
+        {/* Preparation Method and Tablet Cost Analysis */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Preparation Method */}
-          <div className="lg:col-span-8 bg-white rounded-3xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-slate-100 p-8 h-full">
+          <div className="lg:col-span-8 xl:col-span-12 bg-white rounded-3xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-slate-100 p-8 h-full">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF724C]">
                 <BookOpen className="w-4 h-4" />
@@ -651,8 +669,8 @@ export default function RecipeRegistrationClient({
             />
           </div>
 
-          {/* Cost Analysis */}
-          <div className="lg:col-span-4 bg-[#0F172A] rounded-3xl p-8 text-white shadow-2xl shadow-slate-900/20">
+          {/* Tablet Cost Analysis */}
+          <div className="lg:col-span-4 xl:hidden bg-[#0F172A] rounded-3xl p-8 text-white shadow-2xl shadow-slate-900/20 h-full">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
                 <DollarSign className="w-4 h-4" />
@@ -703,6 +721,123 @@ export default function RecipeRegistrationClient({
               </div>
             </div>
           </div>
+        </div>
+        </div>
+        {/* End Left Column */}
+
+        {/* Right Column (Desktop Only) */}
+        <div className="hidden xl:flex w-full xl:w-[32%] flex-col gap-8 sticky top-8">
+          
+          {/* Desktop Recipe Image Card */}
+          <div className="bg-white rounded-3xl shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] border border-slate-100 p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-[#FF724C]">
+                <ImageIcon className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold text-slate-900 uppercase tracking-widest text-[13px]">
+                Recipe Image
+              </h3>
+            </div>
+            
+            <div className="space-y-2">
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageChange}
+                id="recipe-image-upload-desktop"
+              />
+              <label
+                htmlFor="recipe-image-upload-desktop"
+                className="h-[240px] border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center p-4 bg-slate-50/50 hover:bg-slate-50 transition-colors group cursor-pointer overflow-hidden relative"
+              >
+                {imagePreview ? (
+                  <>
+                    <Image
+                      src={imagePreview}
+                      alt="Preview"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <p className="text-white font-bold text-sm">
+                        Ganti Gambar
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform">
+                      <ImageIcon className="w-6 h-6" />
+                    </div>
+                    <p className="mt-4 text-sm font-bold text-slate-900">
+                      Click to upload or drag and drop
+                    </p>
+                    <p className="mt-1 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      PNG, JPG up to 5MB
+                    </p>
+                  </>
+                )}
+              </label>
+            </div>
+          </div>
+
+          {/* Desktop Cost Analysis Card */}
+          <div className="bg-[#0F172A] rounded-3xl p-8 text-white shadow-2xl shadow-slate-900/20">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
+                <DollarSign className="w-4 h-4" />
+              </div>
+              <h3 className="font-bold uppercase tracking-widest text-[13px] opacity-80">
+                Cost Analysis
+              </h3>
+            </div>
+
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <span className="text-sm font-medium text-slate-400">
+                  Ingredient Cost
+                </span>
+                <span className="text-base font-bold text-white">
+                  Rp {ingredientCost.toLocaleString()}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                <span className="text-sm font-medium text-slate-400">
+                  Labor Estimate
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500">Rp</span>
+                  <input
+                    type="number"
+                    value={laborEstimate}
+                    onChange={(e) => setLaborEstimate(Number(e.target.value))}
+                    className="w-24 bg-transparent border-none p-0 text-right text-base font-bold text-white focus:ring-0 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-black uppercase tracking-wider text-slate-400">
+                    Total Production Cost
+                  </span>
+                  <span className="text-2xl font-black text-white">
+                    Rp {totalProductionCost.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-500 font-medium italic">
+                  Total cost is automatically calculated based on ingredient
+                  composition and labor estimate.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        {/* End Two-Column Layout Wrapper */}
         </div>
       </div>
 

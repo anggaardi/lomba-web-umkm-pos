@@ -6,20 +6,13 @@ import {
   Plus, 
   Search, 
   RefreshCw,
-  Edit,
-  Trash2,
   AlertTriangle,
   Loader2,
   CheckCircle2,
   X,
-  ScrollText,
-  UtensilsCrossed,
-  Clock,
-  FileDown,
-  Info
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 
 type Packaging = {
   id: string;
@@ -38,36 +31,15 @@ type Ingredient = {
   packagings: Packaging[];
 };
 
-type RecipeItem = {
-  id: string;
-  ingredientId: string;
-  ingredientName: string;
-  quantity: number;
-  unit: string;
-};
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  recipes: RecipeItem[];
-};
-
 interface InventoryClientProps {
   initialIngredients: Ingredient[];
-  initialProducts: Product[];
 }
 
 export default function InventoryClient({
   initialIngredients,
-  initialProducts,
 }: InventoryClientProps) {
-  const [activeMainTab, setActiveMainTab] = useState<"ingredients" | "recipes">(
-    "ingredients"
-  );
   const [ingredients, setIngredients] =
     useState<Ingredient[]>(initialIngredients);
-  const [products] = useState<Product[]>(initialProducts);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -76,10 +48,8 @@ export default function InventoryClient({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [isPackagingModalOpen, setIsPackagingModalOpen] = useState(false);
-  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
   const [selectedIngredient, setSelectedIngredient] =
     useState<Ingredient | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Purchase form state
   const [purchasePackagingId, setPurchasePackagingId] = useState<string>("");
@@ -87,11 +57,6 @@ export default function InventoryClient({
   const [purchaseTotalPrice, setPurchaseTotalPrice] = useState<number>(0);
   const [purchaseCustomValue, setPurchaseCustomValue] = useState<number>(0);
   const [showPriceWarning, setShowPriceWarning] = useState(false);
-
-  // Recipe form state
-  const [recipeIngredients, setRecipeIngredients] = useState<
-    { ingredientId: string; quantity: number }[]
-  >([]);
 
   // Form states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -140,12 +105,6 @@ export default function InventoryClient({
     });
   }, [ingredients, search, statusFilter]);
 
-  const filteredProducts = useMemo(() => {
-    return products.filter((p) =>
-      p.name.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [products, search]);
-
   const stats = useMemo(() => {
     const total = ingredients.length;
     const lowStock = ingredients.filter(
@@ -155,16 +114,7 @@ export default function InventoryClient({
     return { total, lowStock, outOfStock };
   }, [ingredients]);
 
-  const openRecipeModal = (product: Product) => {
-    setSelectedProduct(product);
-    setRecipeIngredients(
-      product.recipes.map((r) => ({
-        ingredientId: r.ingredientId,
-        quantity: r.quantity,
-      }))
-    );
-    setIsRecipeModalOpen(true);
-  };
+
 
   return (
     <div className="space-y-6 pb-10">
@@ -172,37 +122,24 @@ export default function InventoryClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">
-            Inventory & Recipe
+            Inventory Bahan Baku
           </h1>
           <p className="text-slate-500 text-sm mt-1">
-            Kelola stok bahan baku dan resep produk untuk otomatisasi
-            pengurangan stok
+            Kelola stok bahan baku untuk otomatisasi pengurangan stok saat transaksi
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {activeMainTab === "ingredients" && (
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#FF724C] hover:bg-[#E56543] text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
-            >
-              <Plus className="w-5 h-5" />
-              Tambah Bahan
-            </button>
-          )}
-          {activeMainTab === "recipes" && (
-            <Link
-              href="/dashboard/inventory/recipes/new"
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#FF724C] hover:bg-[#E56543] text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
-            >
-              <Plus className="w-5 h-5" />
-              Tambah Resep Baru
-            </Link>
-          )}
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#FF724C] hover:bg-[#E56543] text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            Tambah Bahan
+          </button>
         </div>
       </div>
 
       {error &&
-        !isRecipeModalOpen &&
         !isAddModalOpen &&
         !isRestockModalOpen && (
           <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
@@ -217,40 +154,7 @@ export default function InventoryClient({
           </div>
         )}
 
-      {/* Main Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200">
-        <button
-          onClick={() => setActiveMainTab("ingredients")}
-          className={cn(
-            "px-6 py-3 text-sm font-bold transition-all relative",
-            activeMainTab === "ingredients"
-              ? "text-[#FF724C]"
-              : "text-slate-400 hover:text-slate-600"
-          )}
-        >
-          Bahan Baku
-          {activeMainTab === "ingredients" && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF724C]" />
-          )}
-        </button>
-        <button
-          onClick={() => setActiveMainTab("recipes")}
-          className={cn(
-            "px-6 py-3 text-sm font-bold transition-all relative",
-            activeMainTab === "recipes"
-              ? "text-[#FF724C]"
-              : "text-slate-400 hover:text-slate-600"
-          )}
-        >
-          Resep Produk
-          {activeMainTab === "recipes" && (
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#FF724C]" />
-          )}
-        </button>
-      </div>
-
-      {activeMainTab === "ingredients" ? (
-        <>
+      <>
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
@@ -437,238 +341,7 @@ export default function InventoryClient({
             </div>
           </div>
         </>
-      ) : (
-        /* Recipes Content */
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredProducts.map((p) => (
-            <Link
-              key={p.id}
-              href={`/dashboard/inventory/recipes/${p.id}`}
-              className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-[#FF724C]/30 transition-all group cursor-pointer block"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#FFF0EB] flex items-center justify-center text-[#FF724C]">
-                    <UtensilsCrossed className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-800">{p.name}</h3>
-                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
-                      IDR {p.price.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openRecipeModal(p);
-                  }}
-                  className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-[#FF724C] hover:border-[#FF724C]/20 transition-all active:scale-90"
-                >
-                  <Edit className="w-4 h-4" />
-                </button>
-              </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
-                  <ScrollText className="w-3 h-3" />
-                  Komposisi Bahan
-                </div>
-                {p.recipes.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {p.recipes.map((r) => (
-                      <div
-                        key={r.id}
-                        className="px-3 py-1.5 bg-slate-50 border border-slate-100 rounded-lg flex items-center gap-2"
-                      >
-                        <span className="text-xs font-bold text-slate-700">
-                          {r.ingredientName}
-                        </span>
-                        <span className="text-[10px] font-black text-[#FF724C] bg-[#FFF0EB] px-1.5 py-0.5 rounded">
-                          {r.quantity} {r.unit}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs italic text-slate-400">
-                    Belum ada resep yang diatur.
-                  </p>
-                )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-
-      {/* Recipe Management Modal */}
-      {isRecipeModalOpen && selectedProduct && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="bg-[#FF724C] p-6 flex items-center justify-between text-white">
-              <div>
-                <h2 className="text-xl font-black">Atur Resep Produk</h2>
-                <p className="text-orange-50 text-xs font-bold mt-0.5 uppercase tracking-widest">
-                  {selectedProduct.name}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsRecipeModalOpen(false)}
-                className="p-1 hover:bg-white/20 rounded-full transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">
-                    Daftar Bahan
-                  </h3>
-                  <button
-                    onClick={() =>
-                      setRecipeIngredients([
-                        ...recipeIngredients,
-                        { ingredientId: "", quantity: 0 },
-                      ])
-                    }
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF724C] text-white rounded-lg text-[10px] font-bold hover:bg-[#E56543] transition-all"
-                  >
-                    <Plus className="w-3 h-3" />
-                    TAMBAH BARIS
-                  </button>
-                </div>
-
-                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin">
-                  {recipeIngredients.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100 group"
-                    >
-                      <div className="flex-1">
-                        <select
-                          value={item.ingredientId}
-                          onChange={(e) => {
-                            const newItems = [...recipeIngredients];
-                            newItems[idx].ingredientId = e.target.value;
-                            setRecipeIngredients(newItems);
-                          }}
-                          className="w-full bg-white border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#FF724C]/20"
-                        >
-                          <option value="">Pilih Bahan Baku</option>
-                          {ingredients.map((ing) => (
-                            <option key={ing.id} value={ing.id}>
-                              {ing.name} ({ing.unit})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="w-24 relative">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={item.quantity || ""}
-                          onChange={(e) => {
-                            const newItems = [...recipeIngredients];
-                            newItems[idx].quantity = Number(e.target.value);
-                            setRecipeIngredients(newItems);
-                          }}
-                          placeholder="Qty"
-                          className="w-full bg-white border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#FF724C]/20"
-                        />
-                      </div>
-                      <button
-                        onClick={() =>
-                          setRecipeIngredients(
-                            recipeIngredients.filter((_, i) => i !== idx)
-                          )
-                        }
-                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {recipeIngredients.length === 0 && (
-                    <div className="text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
-                      <p className="text-sm text-slate-400 font-medium italic">
-                        Klik tombol &quot;Tambah Baris&quot; untuk mulai
-                        mengatur resep.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {error && (
-                <p className="text-red-500 text-xs font-bold bg-red-50 p-3 rounded-lg border border-red-100">
-                  {error}
-                </p>
-              )}
-
-              <div className="flex gap-3 pt-4 border-t border-slate-100">
-                <button
-                  onClick={() => setIsRecipeModalOpen(false)}
-                  className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
-                >
-                  BATAL
-                </button>
-                <button
-                  disabled={isSubmitting}
-                  onClick={async () => {
-                    setIsSubmitting(true);
-                    setError(null);
-                    try {
-                      const res = await fetch("/api/inventory/recipes", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          productId: selectedProduct.id,
-                          ingredients: recipeIngredients.filter(
-                            (i) => i.ingredientId && i.quantity > 0
-                          ),
-                        }),
-                      });
-
-                      if (!res.ok) {
-                        const text = await res.text();
-                        try {
-                          const err = JSON.parse(text);
-                          throw new Error(err.error || "Gagal menyimpan resep");
-                        } catch {
-                          throw new Error(`Server Error: ${res.status}`);
-                        }
-                      }
-
-                      setIsRecipeModalOpen(false);
-                      window.location.reload(); // Refresh to see changes
-                    } catch (err: unknown) {
-                      setError(
-                        err instanceof Error
-                          ? err.message
-                          : "Gagal menyimpan resep"
-                      );
-                    } finally {
-                      setIsSubmitting(false);
-                    }
-                  }}
-                  className="flex-2 py-3 bg-[#FF724C] hover:bg-[#E56543] text-white rounded-xl font-bold text-sm shadow-lg shadow-[#FF724C]/20 transition-all flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-5 h-5" /> SIMPAN RESEP
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Add Ingredient Modal */}
       {isAddModalOpen && (

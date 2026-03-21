@@ -52,6 +52,7 @@ export function Sidebar({
     { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
     { icon: MonitorSmartphone, label: "POS Kasir", href: "/dashboard/pos" },
     { icon: Box, label: "Inventory", href: "/dashboard/inventory" },
+    { icon: ScrollText, label: "Resep Produk", href: "/dashboard/recipes" },
     { icon: ShoppingCart, label: "Transaksi", href: "/dashboard/transactions" },
     { icon: BarChart3, label: "Laporan", href: "/dashboard/reports" },
   ];
@@ -104,8 +105,8 @@ export function Sidebar({
 
           return (
             <Link
-              key={item.label}
-              href={item.href}
+              key={"label" in item ? item.label : index}
+              href={"href" in item ? (item.href as string) : "#"}
               className={cn(
                 "group relative flex items-center py-3 transition-all duration-300",
                 isCollapsed ? "justify-center px-0" : "px-6",

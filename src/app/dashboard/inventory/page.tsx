@@ -6,7 +6,6 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function InventoryPage() {
-  let initialData;
   try {
     const { tenant } = await requireTenant();
 
@@ -17,23 +16,6 @@ export default async function InventoryPage() {
       },
       include: {
         packagings: true,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    // 2. Fetch Products with Recipes
-    const products = await prisma.product.findMany({
-      where: {
-        tenantId: tenant.id,
-      },
-      include: {
-        recipes: {
-          include: {
-            ingredient: true,
-          },
-        },
       },
       orderBy: {
         name: "asc",
@@ -56,35 +38,13 @@ export default async function InventoryPage() {
       })),
     }));
 
-    // Format Products for client
-    const formattedProducts = products.map((p) => ({
-      id: p.id,
-      name: p.name,
-      price: Number(p.price),
-      recipes: p.recipes.map((r) => ({
-        id: r.id,
-        ingredientId: r.ingredientId,
-        ingredientName: r.ingredient.name,
-        quantity: r.quantity,
-        unit: r.ingredient.unit,
-      })),
-    }));
-
-    initialData = {
-      ingredients: formattedIngredients,
-      products: formattedProducts,
-    };
+    return (
+      <div className="container mx-auto py-6">
+        <InventoryClient initialIngredients={formattedIngredients} />
+      </div>
+    );
   } catch (error) {
     console.error("Inventory page error:", error);
     redirect("/login");
   }
-
-  return (
-    <div className="container mx-auto py-6">
-      <InventoryClient 
-        initialIngredients={initialData.ingredients} 
-        initialProducts={initialData.products}
-      />
-    </div>
-  );
 }

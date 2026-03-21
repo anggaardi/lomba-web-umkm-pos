@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/auth";
 import { notFound, redirect } from "next/navigation";
-import RecipeDetailClient from "./RecipeDetailClient";
+import RecipeDetailClient from "@/app/dashboard/recipes/_components/RecipeDetailClient";
 
 export const dynamic = "force-dynamic";
 
-export default async function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function RecipeDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   try {
     const { id } = await params;
     const { tenant } = await requireTenant();
@@ -17,6 +21,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
         tenantId: tenant.id,
       },
       include: {
+        category: true,
         recipes: {
           include: {
             ingredient: true,
@@ -29,7 +34,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
       notFound();
     }
 
-    // 2. Fetch all ingredients for the tenant (needed for cost analysis and lookup)
+    // 2. Fetch all ingredients for the tenant
     const ingredients = await prisma.ingredient.findMany({
       where: {
         tenantId: tenant.id,
@@ -40,7 +45,11 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
     const formattedProduct = {
       id: product.id,
       name: product.name,
+      description: product.description || "",
       price: Number(product.price),
+      image: product.image,
+      categoryName: product.category?.name || "PRODUK",
+      updatedAt: product.updatedAt,
       recipes: product.recipes.map((r) => ({
         id: r.id,
         ingredientId: r.ingredientId,
@@ -61,9 +70,9 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
 
     return (
       <div className="container mx-auto py-6">
-        <RecipeDetailClient 
-          product={formattedProduct} 
-          ingredients={formattedIngredients} 
+        <RecipeDetailClient
+          product={formattedProduct}
+          ingredients={formattedIngredients}
         />
       </div>
     );
