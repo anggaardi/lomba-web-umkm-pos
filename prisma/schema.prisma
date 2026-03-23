@@ -155,6 +155,7 @@ model Ingredient {
   id            String   @id @default(cuid())
   name          String
   stock         Float    @default(0) // Satuan Terkecil (Base Unit)
+  minStock      Float    @default(0) // Threshold stok minimum
   unit          String   // ml, gr, pcs, etc
   
   // Fitur Smart

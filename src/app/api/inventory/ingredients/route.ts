@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { name, unit, initialStock, initialPrice } = validation.data;
+    const { name, unit, initialStock, initialPrice, minStock } = validation.data;
 
     const ingredient = await prisma.$transaction(async (tx) => {
       const newIngredient = await tx.ingredient.create({
@@ -46,6 +46,7 @@ export async function POST(req: Request) {
           averageCostPerUnit: initialStock && initialPrice ? (initialPrice / initialStock) : 0,
           lastPurchasePrice: initialStock && initialPrice ? (initialPrice / initialStock) : null,
           tenantId: tenant.id,
+          minStock,
         },
       });
 

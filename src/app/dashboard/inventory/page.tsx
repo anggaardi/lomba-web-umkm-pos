@@ -28,6 +28,7 @@ export default async function InventoryPage() {
       name: ing.name,
       stock: ing.stock,
       unit: ing.unit,
+      minStock: ing.minStock,
       averageCostPerUnit: Number(ing.averageCostPerUnit),
       lastPurchasePrice: ing.lastPurchasePrice ? Number(ing.lastPurchasePrice) : null,
       updatedAt: ing.updatedAt.toISOString(),

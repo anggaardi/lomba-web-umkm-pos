@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Ingredient" ADD COLUMN "minStock" DOUBLE PRECISION NOT NULL DEFAULT 0;

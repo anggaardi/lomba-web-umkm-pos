@@ -95,7 +95,7 @@ export default function RecipeRegistrationClient({
     useState(false);
   const [ingredientSearchQuery, setIngredientSearchQuery] = useState("");
   const [selectedIngredientIds, setSelectedIngredientIds] = useState<string[]>(
-    []
+    initialData?.recipeItems?.map((item) => item.ingredientId) || []
   );
 
   const filteredIngredients = useMemo(() => {

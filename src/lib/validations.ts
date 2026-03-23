@@ -13,6 +13,11 @@ export const ingredientCreateSchema = z.object({
     .number()
     .nonnegative("Harga awal tidak boleh negatif")
     .optional(),
+  minStock: z.coerce.number().nonnegative("Min stok tidak boleh negatif").default(0),
+});
+
+export const ingredientMinStockUpdateSchema = z.object({
+  minStock: z.coerce.number().nonnegative("Min stok tidak boleh negatif"),
 });
 
 export const packagingCreateSchema = z.object({
