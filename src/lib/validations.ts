@@ -31,7 +31,7 @@ export const ingredientPurchaseSchema = z.object({
   packagingId: z.string().optional(), // Jika null, berarti input manual conversion
   customConversionValue: z.coerce.number().positive().optional(),
   purchaseQty: z.coerce.number().positive("Jumlah beli harus positif"),
-  totalPrice: z.coerce.number().positive("Total harga harus positif"),
+  totalPrice: z.coerce.number().nonnegative("Total harga tidak boleh negatif").default(0),
   notes: z.string().max(255).optional(),
 });
 

@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getStockStatus, StockStatus } from "@/lib/inventory-utils";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 type Packaging = {
   id: string;
@@ -39,6 +41,201 @@ type Ingredient = {
 
 interface InventoryClientProps {
   initialIngredients: Ingredient[];
+}
+
+function MobileInventoryCard({ 
+  ing, 
+  onRestock, 
+  onPackaging, 
+  onEditMinStock, 
+  isEditingMinStock, 
+  editMinStockValue, 
+  onSaveMinStock, 
+  onCancelEdit, 
+  minStockError,
+  setEditMinStockValue
+}: { 
+  ing: Ingredient; 
+  onRestock: () => void; 
+  onPackaging: () => void;
+  onEditMinStock: () => void;
+  isEditingMinStock: boolean;
+  editMinStockValue: number;
+  onSaveMinStock: (val: number) => void;
+  onCancelEdit: () => void;
+  minStockError: string | null;
+  setEditMinStockValue: (val: number) => void;
+}) {
+  const status = getStockStatus(ing.stock, ing.minStock ?? 0);
+  const isLow = status === "MENIPIS";
+  const isOut = status === "HABIS";
+
+  return (
+    <div className="bg-white rounded-3xl p-5 shadow-sm border border-slate-50 flex flex-col gap-4 mx-1">
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-1">
+          <h3 className="font-black text-slate-800 text-lg leading-tight">{ing.name}</h3>
+          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            {ing.unit} | {ing.packagings?.length || 0} Kemasan
+          </p>
+        </div>
+        {isOut ? (
+          <span className="px-2.5 py-1 bg-red-50 text-red-600 rounded-lg text-[10px] font-black uppercase tracking-wider">HABIS</span>
+        ) : isLow ? (
+          <span className="px-2.5 py-1 bg-orange-50 text-orange-600 rounded-lg text-[10px] font-black uppercase tracking-wider">MENIPIS</span>
+        ) : (
+          <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-wider">NORMAL</span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 py-2 border-y border-dashed border-slate-100">
+        <div>
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1 italic">STOK SAAT INI</p>
+          <p className="text-lg font-black text-slate-800">{ing.stock.toLocaleString()} <span className="text-xs text-slate-400">{ing.unit}</span></p>
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1 italic">MIN STOK</p>
+          {isEditingMinStock ? (
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-1">
+                <input
+                  type="number"
+                  value={editMinStockValue}
+                  onChange={(e) => setEditMinStockValue(Number(e.target.value))}
+                  className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-[#FF724C]/20"
+                  autoFocus
+                />
+                <button onClick={() => onSaveMinStock(editMinStockValue)} className="p-1 text-emerald-500"><CheckCircle2 className="w-4 h-4" /></button>
+                <button onClick={onCancelEdit} className="p-1 text-slate-400"><X className="w-4 h-4" /></button>
+              </div>
+              {minStockError && <p className="text-[9px] text-red-500 font-bold">{minStockError}</p>}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-black text-slate-800">{(ing.minStock ?? 0).toLocaleString()} <span className="text-xs text-slate-400">{ing.unit}</span></p>
+              <button onClick={onEditMinStock} className="p-1 text-slate-300 hover:text-[#FF724C] transition-colors"><Pencil className="w-3.5 h-3.5" /></button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1 italic">HPP AVG</p>
+          <p className="text-sm font-bold text-slate-700">Rp {ing.averageCostPerUnit.toLocaleString()}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onPackaging}
+            className="p-3 border border-slate-100 rounded-2xl text-slate-400 hover:text-[#FF724C] active:scale-95 transition-all"
+            title="Kelola Kemasan"
+          >
+            <Box className="w-5 h-5" />
+          </button>
+          <button
+            onClick={onRestock}
+            className="px-5 py-3 bg-[#FF724C] text-white rounded-2xl text-xs font-black shadow-md shadow-[#FF724C]/20 active:scale-95 transition-all flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> BELANJA
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopInventoryRow({ 
+  ing, 
+  isEditingMinStock, 
+  editMinStockValue, 
+  onSaveMinStock, 
+  onCancelEdit, 
+  minStockError,
+  setEditMinStockValue,
+  onRestock,
+  onPackaging,
+  onEditStart
+}: { 
+  ing: Ingredient; 
+  isEditingMinStock: boolean;
+  editMinStockValue: number;
+  onSaveMinStock: (val: number) => void;
+  onCancelEdit: () => void;
+  minStockError: string | null;
+  setEditMinStockValue: (val: number) => void;
+  onRestock: () => void;
+  onPackaging: () => void;
+  onEditStart: () => void;
+}) {
+  const status = getStockStatus(ing.stock, ing.minStock ?? 0);
+  const isLow = status === "MENIPIS";
+  const isOut = status === "HABIS";
+
+  return (
+    <tr className="hover:bg-slate-50/50 transition-colors group">
+      <td className="px-6 py-4">
+        <div className="font-bold text-slate-700">{ing.name}</div>
+        <div className="text-[10px] text-slate-400 font-medium whitespace-nowrap">
+          Satuan: {ing.unit} | {ing.packagings?.length || 0} Kemasan
+        </div>
+      </td>
+      <td className="px-6 py-4 font-black text-slate-800">
+        {ing.stock.toLocaleString()} {ing.unit}
+      </td>
+      <td className="px-6 py-4">
+        {isEditingMinStock ? (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1">
+              <input
+                type="number"
+                value={editMinStockValue}
+                onChange={(e) => setEditMinStockValue(Number(e.target.value))}
+                className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold"
+                autoFocus
+              />
+              <button onClick={() => onSaveMinStock(editMinStockValue)} className="p-1 text-emerald-500"><CheckCircle2 className="w-4 h-4" /></button>
+              <button onClick={onCancelEdit} className="p-1 text-slate-400"><X className="w-4 h-4" /></button>
+            </div>
+            {minStockError && <p className="text-[10px] text-red-500 font-bold">{minStockError}</p>}
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-700 text-xs">{(ing.minStock ?? 0).toLocaleString()} {ing.unit}</span>
+            <button onClick={onEditStart} className="p-1 text-slate-300 hover:text-[#FF724C] transition-colors"><Pencil className="w-3 h-3" /></button>
+          </div>
+        )}
+      </td>
+      <td className="px-6 py-4">
+        <div className="text-xs font-bold text-slate-700">Rp {ing.averageCostPerUnit.toLocaleString()}</div>
+        <div className="text-[10px] text-slate-400 font-medium">per {ing.unit}</div>
+      </td>
+      <td className="px-6 py-4">
+        {ing.lastPurchasePrice ? (
+          <>
+            <div className="text-xs font-bold text-slate-700">Rp {ing.lastPurchasePrice.toLocaleString()}</div>
+            <div className="text-[10px] text-slate-400 font-medium">per {ing.unit}</div>
+          </>
+        ) : (
+          <span className="text-slate-300">-</span>
+        )}
+      </td>
+      <td className="px-6 py-4">
+        {isOut ? (
+          <span className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-black uppercase tracking-wider whitespace-nowrap">HABIS</span>
+        ) : isLow ? (
+          <span className="px-2 py-1 bg-orange-50 text-orange-600 rounded text-[10px] font-black uppercase tracking-wider whitespace-nowrap">MENIPIS</span>
+        ) : (
+          <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-black uppercase tracking-wider whitespace-nowrap">NORMAL</span>
+        )}
+      </td>
+      <td className="px-6 py-4 text-right">
+        <div className="flex items-center justify-end gap-2">
+          <button onClick={onPackaging} className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-[#FF724C] active:scale-95 transition-all"><Box className="w-4 h-4" /></button>
+          <button onClick={onRestock} className="px-3 py-1.5 bg-[#FF724C] text-white rounded-lg text-[10px] font-bold hover:bg-[#E56543] active:scale-95 flex items-center gap-1.5 whitespace-nowrap"><Plus className="w-3 h-3" /> BELANJA</button>
+        </div>
+      </td>
+    </tr>
+  );
 }
 
 export default function InventoryClient({
@@ -158,282 +355,249 @@ export default function InventoryClient({
   };
 
   return (
-    <div className="space-y-6 pb-10">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+    <div className="space-y-6 pb-24 lg:pb-10">
+      <ToastContainer />
+
+      {/* --- DASHBOARD MOBILE HEADER & SEARCH (Mobile Only) --- */}
+      <div className="lg:hidden space-y-6">
+        <div className="flex items-center justify-between -mt-2">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#FF724C]/10 flex items-center justify-center text-[#FF724C]">
+              <Box className="w-6 h-6" />
+            </div>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Stock Manager</h1>
+          </div>
+          <button className="p-2 text-[#FF724C] hover:bg-orange-50 rounded-lg transition-colors">
+            <Search className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400 font-bold" />
+          </div>
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="block w-full p-4 pl-12 text-sm text-gray-900 border border-gray-100 rounded-2xl bg-white focus:ring-2 focus:ring-[#FF724C] focus:outline-none transition-all shadow-sm"
+            placeholder="Cari bahan baku..."
+          />
+        </div>
+
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center justify-center gap-2 w-full py-4 bg-[#FF724C] hover:bg-[#FF724C]/90 text-white rounded-2xl text-base font-bold shadow-md shadow-[#FF724C]/20 transition-all active:scale-[0.98]"
+        >
+          <Plus className="w-6 h-6" />
+          Tambah Bahan
+        </button>
+      </div>
+
+      <div className="hidden lg:flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">
-            Inventory Bahan Baku
-          </h1>
+          <h1 className="text-2xl font-black text-slate-800">Inventory Bahan Baku</h1>
           <p className="text-slate-500 text-sm mt-1">
             Kelola stok bahan baku untuk otomatisasi pengurangan stok saat transaksi
           </p>
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#FF724C] hover:bg-[#E56543] text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
+             onClick={() => setIsAddModalOpen(true)}
+             className="flex items-center gap-2 px-5 py-2.5 bg-[#FF724C] hover:bg-[#E56543] text-white rounded-xl text-sm font-bold shadow-sm transition-all active:scale-95"
           >
             <Plus className="w-5 h-5" />
-            Tambah Bahan
+            Tambah Bahan Baru
           </button>
         </div>
       </div>
 
-      {error &&
-        !isAddModalOpen &&
-        !isRestockModalOpen && (
-          <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
-            <AlertTriangle className="w-5 h-5 text-red-500" />
-            <p className="text-sm font-bold text-red-700">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="ml-auto p-1 hover:bg-red-100 rounded-full"
+      {error && !isAddModalOpen && !isRestockModalOpen && (
+        <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 mx-1 lg:mx-0">
+          <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
+          <p className="text-sm font-bold text-red-700">{error}</p>
+          <button onClick={() => setError(null)} className="ml-auto p-1 hover:bg-red-100 rounded-full">
+            <X className="w-4 h-4 text-red-400" />
+          </button>
+        </div>
+      )}
+
+      {/* --- STATS CARDS (RESPONSIVE) --- */}
+      {/* Mobile Stats Scroll */}
+      <div className="lg:hidden flex overflow-x-auto gap-4 pb-2 -mx-4 px-4 no-scrollbar">
+        <div className="min-w-[150px] flex-1 bg-white p-5 rounded-3xl shadow-sm border border-slate-50 flex flex-col">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 italic">TOTAL BAHAN</p>
+          <div className="flex items-end gap-1">
+            <p className="text-3xl font-black text-[#FF724C]">{stats.total}</p>
+            <span className="text-xs font-bold text-slate-400 pb-1">Item</span>
+          </div>
+        </div>
+        <div className="min-w-[150px] flex-1 bg-[#FFF8F0] p-5 rounded-3xl shadow-sm border border-orange-50 flex flex-col">
+          <p className="text-[10px] font-black text-orange-800/60 uppercase tracking-widest mb-4 italic">MENIPIS</p>
+          <div className="flex items-end gap-1">
+            <p className="text-3xl font-black text-orange-500">{stats.lowStock}</p>
+            <span className="text-xs font-bold text-orange-800/60 pb-1">Item</span>
+          </div>
+        </div>
+        <div className="min-w-[150px] flex-1 bg-[#FFEFEB] p-5 rounded-3xl shadow-sm border border-red-50 flex flex-col">
+          <p className="text-[10px] font-black text-red-800/60 uppercase tracking-widest mb-4 italic">HABIS</p>
+          <div className="flex items-end gap-1">
+            <p className="text-3xl font-black text-red-500">{stats.outOfStock}</p>
+            <span className="text-xs font-bold text-red-800/60 pb-1">Bahan</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop Stats Grid */}
+      <div className="hidden lg:grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF724C]">
+            <Box className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Total Bahan Baku</p>
+            <p className="text-2xl font-bold text-slate-800">{stats.total}</p>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+            <AlertTriangle className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Stok Menipis</p>
+            <p className="text-2xl font-bold text-slate-800">{stats.lowStock}</p>
+          </div>
+        </div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
+            <X className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-slate-500">Habis</p>
+            <p className="text-2xl font-bold text-slate-800">{stats.outOfStock}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* --- INGREDIENTS LIST --- */}
+      <div className="flex flex-col lg:bg-white lg:rounded-2xl lg:shadow-sm lg:border lg:border-slate-200 lg:overflow-hidden">
+        {/* Toolbar Responsive */}
+        <div className="flex flex-col lg:p-4 lg:border-b lg:border-slate-100 gap-4">
+          <div className="flex items-center justify-between lg:hidden pt-2">
+            <h2 className="text-lg font-black text-gray-900 tracking-tight">Variasi Bahan</h2>
+            <button 
+              onClick={refreshData} 
+              disabled={isRefreshing}
+              className="p-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 active:scale-95 disabled:opacity-50"
             >
-              <X className="w-4 h-4 text-red-400" />
+              <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
             </button>
           </div>
-        )}
 
-      <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-[#FF724C]">
-                <Box className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  Total Bahan Baku
-                </p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {stats.total}
-                </p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  Stok Menipis
-                </p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {stats.lowStock}
-                </p>
-              </div>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center text-red-600">
-                <X className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-slate-500">Habis</p>
-                <p className="text-2xl font-bold text-slate-800">
-                  {stats.outOfStock}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Ingredients Content */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            {/* Toolbar */}
-            <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 flex-1">
-                <div className="relative flex-1 max-w-md">
-                  <input
-                    type="text"
-                    placeholder="Cari bahan baku..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-11 pr-4 py-2.5 w-full bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FF724C]/20 focus:border-[#FF724C] transition-all"
-                  />
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                </div>
-                <div className="flex items-center p-1 bg-slate-100 rounded-xl">
-                  {["All", "Low Stock", "Out of Stock"].map((filter) => (
-                    <button
-                      key={filter}
-                      onClick={() => setStatusFilter(filter)}
-                      className={cn(
-                        "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
-                        statusFilter === filter
-                          ? "bg-white text-[#FF724C] shadow-sm"
-                          : "text-slate-500 hover:text-slate-700"
-                      )}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                </div>
-              </div>
+          <div className="flex items-center p-1 bg-gray-100 rounded-2xl w-full lg:max-w-fit mb-2 lg:mb-0">
+            {["All", "Low Stock", "Out of Stock"].map((filter) => (
               <button
-                onClick={refreshData}
-                disabled={isRefreshing}
-                className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 transition-all active:scale-95 disabled:opacity-50"
+                key={filter}
+                onClick={() => setStatusFilter(filter)}
+                className={cn(
+                  "flex-1 lg:flex-none px-4 lg:px-6 py-2.5 lg:py-1.5 text-xs font-black rounded-xl transition-all",
+                  statusFilter === filter
+                    ? "bg-white text-[#FF724C] shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                )}
               >
-                <RefreshCw
-                  className={cn("w-4 h-4", isRefreshing && "animate-spin")}
-                />
+                {filter === "All" ? "Semua" : filter === "Low Stock" ? "Menipis" : "Habis"}
               </button>
-            </div>
-
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50/50 text-[10px] uppercase text-slate-500 font-black tracking-widest border-b border-slate-100">
-                  <tr>
-                    <th className="px-6 py-4">Nama Bahan</th>
-                    <th className="px-6 py-4">Stok Saat Ini</th>
-                    <th className="px-6 py-4">Min Stok</th>
-                    <th className="px-6 py-4">HPP (Rata-rata)</th>
-                    <th className="px-6 py-4">Harga Terakhir</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredIngredients.map((ing) => {
-                    const status = getStockStatus(ing.stock, ing.minStock ?? 0);
-                    const isLow = status === "MENIPIS";
-                    const isOut = status === "HABIS";
-                    return (
-                      <tr
-                        key={ing.id}
-                        className="hover:bg-slate-50/50 transition-colors group"
-                      >
-                        <td className="px-6 py-4">
-                          <div className="font-bold text-slate-700">
-                            {ing.name}
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-medium">
-                            Satuan: {ing.unit} | {ing.packagings?.length || 0} Kemasan
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 font-bold text-slate-800">
-                          {ing.stock.toLocaleString()} {ing.unit}
-                        </td>
-                        <td className="px-6 py-4">
-                          {editingMinStock !== ing.id ? (
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-slate-700 text-xs">
-                                {(() => { const v = ing.minStock ?? 0; return Number.isInteger(v) ? v.toString() : v.toFixed(2); })()} {ing.unit}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  setEditingMinStock(ing.id);
-                                  setEditMinStockValue(ing.minStock ?? 0);
-                                  setMinStockError(null);
-                                }}
-                                className="p-1 text-slate-300 hover:text-[#FF724C] transition-colors"
-                                title="Edit min stok"
-                              >
-                                <Pencil className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-1">
-                                <input
-                                  type="number"
-                                  value={editMinStockValue}
-                                  min="0"
-                                  onChange={(e) => setEditMinStockValue(Number(e.target.value))}
-                                  className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-[#FF724C]/20"
-                                  autoFocus
-                                />
-                                <button
-                                  onClick={() => handleSaveMinStock(ing.id, editMinStockValue)}
-                                  className="p-1 text-emerald-500 hover:text-emerald-700 transition-colors"
-                                  title="Simpan"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => { setEditingMinStock(null); setMinStockError(null); }}
-                                  className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                                  title="Batal"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
-                              </div>
-                              {minStockError && editingMinStock === ing.id && (
-                                <p className="text-[10px] text-red-500 font-bold">{minStockError}</p>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-xs font-bold text-slate-700">
-                            Rp {ing.averageCostPerUnit.toLocaleString()}
-                          </div>
-                          <div className="text-[10px] text-slate-400 font-medium">
-                            per {ing.unit}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          {ing.lastPurchasePrice ? (
-                            <>
-                              <div className="text-xs font-bold text-slate-700">
-                                Rp {ing.lastPurchasePrice.toLocaleString()}
-                              </div>
-                              <div className="text-[10px] text-slate-400 font-medium">
-                                per {ing.unit}
-                              </div>
-                            </>
-                          ) : (
-                            <span className="text-slate-300">-</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          {isOut ? (
-                            <span className="px-2 py-1 bg-red-50 text-red-600 rounded text-[10px] font-black uppercase tracking-wider">
-                              HABIS
-                            </span>
-                          ) : isLow ? (
-                            <span className="px-2 py-1 bg-orange-50 text-orange-600 rounded text-[10px] font-black uppercase tracking-wider">
-                              MENIPIS
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-[10px] font-black uppercase tracking-wider">
-                              NORMAL
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => {
-                                setSelectedIngredient(ing);
-                                setIsPackagingModalOpen(true);
-                              }}
-                              className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-[#FF724C] hover:border-[#FF724C]/20 transition-all active:scale-95"
-                              title="Kelola Kemasan"
-                            >
-                              <Box className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setSelectedIngredient(ing);
-                                setIsRestockModalOpen(true);
-                              }}
-                              className="px-3 py-1.5 bg-[#FF724C] text-white rounded-lg text-[10px] font-bold hover:bg-[#E56543] transition-all active:scale-95 flex items-center gap-1.5"
-                            >
-                              <Plus className="w-3 h-3" />
-                              BELANJA
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            ))}
           </div>
-        </>
+
+          {/* Desktop Search (Hidden on Mobile as it's at the top) */}
+          <div className="hidden lg:flex items-center justify-between">
+            <div className="relative flex-1 max-w-md">
+              <input
+                type="text"
+                placeholder="Cari bahan baku..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-11 pr-4 py-2.5 w-full bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#FF724C]/20 focus:border-[#FF724C] transition-all"
+              />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            </div>
+            <button
+              onClick={refreshData}
+              disabled={isRefreshing}
+              className="p-2.5 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-500 transition-all active:scale-95 disabled:opacity-50"
+            >
+              <RefreshCw className={cn("w-4 h-4", isRefreshing && "animate-spin")} />
+            </button>
+          </div>
+        </div>
+
+        {/* --- MOBILE LIST VIEW (Cards) --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:hidden pt-2">
+          {filteredIngredients.map((ing) => (
+            <MobileInventoryCard 
+              key={ing.id} 
+              ing={ing} 
+              onRestock={() => { setSelectedIngredient(ing); setIsRestockModalOpen(true); }}
+              onPackaging={() => { setSelectedIngredient(ing); setIsPackagingModalOpen(true); }}
+              onEditMinStock={() => { setEditingMinStock(ing.id); setEditMinStockValue(ing.minStock ?? 0); setMinStockError(null); }}
+              isEditingMinStock={editingMinStock === ing.id}
+              editMinStockValue={editMinStockValue}
+              onSaveMinStock={(val: number) => handleSaveMinStock(ing.id, val)}
+              onCancelEdit={() => setEditingMinStock(null)}
+              minStockError={minStockError}
+              setEditMinStockValue={setEditMinStockValue}
+            />
+          ))}
+        </div>
+
+        {/* --- DESKTOP TABLE VIEW --- */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50/50 text-[10px] uppercase text-slate-500 font-black tracking-widest border-b border-slate-100">
+              <tr>
+                <th className="px-6 py-4">Nama Bahan</th>
+                <th className="px-6 py-4">Stok Saat Ini</th>
+                <th className="px-6 py-4">Min Stok</th>
+                <th className="px-6 py-4">HPP (Rata-rata)</th>
+                <th className="px-6 py-4">Harga Terakhir</th>
+                <th className="px-6 py-4">Status</th>
+                <th className="px-6 py-4 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {filteredIngredients.map((ing) => (
+                <DesktopInventoryRow 
+                  key={ing.id} 
+                  ing={ing} 
+                  isEditingMinStock={editingMinStock === ing.id}
+                  editMinStockValue={editMinStockValue}
+                  onSaveMinStock={(val: number) => handleSaveMinStock(ing.id, val)}
+                  onCancelEdit={() => setEditingMinStock(null)}
+                  minStockError={minStockError}
+                  setEditMinStockValue={setEditMinStockValue}
+                  onRestock={() => { setSelectedIngredient(ing); setIsRestockModalOpen(true); }}
+                  onPackaging={() => { setSelectedIngredient(ing); setIsPackagingModalOpen(true); }}
+                  onEditStart={() => {
+                    setEditingMinStock(ing.id);
+                    setEditMinStockValue(ing.minStock ?? 0);
+                    setMinStockError(null);
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* FAB Mobile Only */}
+      <button
+        onClick={() => setIsAddModalOpen(true)}
+        className="fixed bottom-24 right-6 w-14 h-14 bg-[#FF724C] text-white rounded-full flex items-center justify-center shadow-lg shadow-[#FF724C]/40 lg:hidden z-30 active:scale-95 transition-transform"
+      >
+        <Plus className="w-8 h-8 font-black" />
+      </button>
 
 
       {/* Add Ingredient Modal */}
@@ -677,14 +841,21 @@ export default function InventoryClient({
 
                   if (!res.ok) throw new Error("Gagal memproses stok masuk");
 
-                  setIsRestockModalOpen(false);
-                  refreshData();
                   // Reset form
                   setPurchasePackagingId("");
                   setPurchaseQty(0);
                   setPurchaseTotalPrice(0);
                   setPurchaseCustomValue(0);
                   setShowPriceWarning(false);
+
+                  refreshData();
+                  setIsRestockModalOpen(false);
+                  toast.success(`Stok ${selectedIngredient.name} berhasil ditambahkan!`, {
+                    position: "top-right",
+                    autoClose: 3000,
+                    hideProgressBar: false,
+                    theme: "light",
+                  });
                 } catch (err: unknown) {
                   setError(
                     err instanceof Error
@@ -723,43 +894,6 @@ export default function InventoryClient({
                   </div>
                 </div>
 
-                {/* Jumlah & Tanggal Row */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      JUMLAH MASUK
-                    </label>
-                    <div className="relative group">
-                      <input
-                        type="number"
-                        value={purchaseQty || ""}
-                        onChange={(e) => {
-                           setPurchaseQty(Number(e.target.value));
-                           if (!purchasePackagingId) setPurchaseCustomValue(1);
-                        }}
-                        placeholder="0"
-                        className="w-full bg-white border border-slate-100 rounded-[20px] pl-6 pr-12 py-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-[#FF724C]/10 focus:border-[#FF724C] transition-all shadow-sm border-b-2"
-                      />
-                      <span className="absolute right-6 top-1/2 -translate-y-1/2 text-sm font-black text-[#FF724C]">
-                        {selectedIngredient.unit}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      TANGGAL
-                    </label>
-                    <div className="relative group">
-                      <input
-                        type="date"
-                        defaultValue={new Date().toISOString().split('T')[0]}
-                        className="w-full bg-white border border-slate-100 rounded-[20px] px-6 py-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-300 transition-all shadow-sm border-b-2"
-                      />
-                      <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-                    </div>
-                  </div>
-                </div>
-
                 {/* Packaging Select (Integrated into design) */}
                 <div className="space-y-2">
                    <div className="flex items-center justify-between ml-1">
@@ -786,6 +920,47 @@ export default function InventoryClient({
                         </option>
                       ))}
                    </select>
+                </div>
+
+                {/* Jumlah & Tanggal Row */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between ml-1">
+                      <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                        JUMLAH MASUK
+                      </label>
+                      <span className="text-[10px] font-black text-white bg-[#FF724C] rounded-full px-2.5 py-0.5">
+                        {purchasePackagingId 
+                          ? (selectedIngredient.packagings || []).find(p => p.id === purchasePackagingId)?.name
+                          : selectedIngredient.unit}
+                      </span>
+                    </div>
+                    <div>
+                      <input
+                        type="number"
+                        value={purchaseQty || ""}
+                        onChange={(e) => {
+                           setPurchaseQty(Number(e.target.value));
+                           if (!purchasePackagingId) setPurchaseCustomValue(1);
+                        }}
+                        placeholder="0"
+                        className="w-full bg-white border border-slate-100 rounded-[20px] px-6 py-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-[#FF724C]/10 focus:border-[#FF724C] transition-all shadow-sm border-b-2"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      TANGGAL
+                    </label>
+                    <div className="relative group">
+                      <input
+                        type="date"
+                        defaultValue={new Date().toISOString().split('T')[0]}
+                        className="w-full bg-white border border-slate-100 rounded-[20px] px-6 py-4 text-sm font-bold text-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/5 focus:border-slate-300 transition-all shadow-sm border-b-2"
+                      />
+                      <Calendar className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -1028,7 +1203,7 @@ export default function InventoryClient({
             </div>
           </div>
         </div>
-        )}
-      </div>
-    );
+      )}
+    </div>
+  );
 }

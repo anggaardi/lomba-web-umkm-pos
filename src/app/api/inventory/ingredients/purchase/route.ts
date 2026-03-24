@@ -12,8 +12,9 @@ export async function POST(req: Request) {
     
     const validation = ingredientPurchaseSchema.safeParse(body);
     if (!validation.success) {
+      const errors = validation.error.issues.map(i => i.message).join(", ");
       return NextResponse.json(
-        { error: validation.error.issues[0].message },
+        { error: errors },
         { status: 400 }
       );
     }
