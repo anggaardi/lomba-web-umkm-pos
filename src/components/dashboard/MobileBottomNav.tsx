@@ -10,13 +10,19 @@ import {
   Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useMobileHeader } from "@/context/MobileHeaderContext";
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const { title, backUrl } = useMobileHeader();
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
+  const isDetailMode = !!(title && backUrl);
+
   useEffect(() => {
+    if (isDetailMode) return; 
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
@@ -33,7 +39,7 @@ export function MobileBottomNav() {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, [lastScrollY, isDetailMode]);
 
   const navItems = [
     { icon: LayoutDashboard, label: "BERANDA", href: "/dashboard" },
@@ -41,6 +47,8 @@ export function MobileBottomNav() {
     { icon: Box, label: "STOK", href: "/dashboard/inventory" },
     { icon: Settings, label: "PENGATURAN", href: "/dashboard/settings" },
   ];
+
+  if (isDetailMode) return null;
 
   return (
     <div className={cn(

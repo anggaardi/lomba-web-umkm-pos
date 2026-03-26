@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { Navbar } from "@/components/dashboard/Navbar";
 import { MobileBottomNav } from "@/components/dashboard/MobileBottomNav";
 import { MobileHeader } from "@/components/dashboard/MobileHeader";
+import { MobileHeaderProvider } from "@/context/MobileHeaderContext";
 
 export default async function DashboardLayout({
   children,
@@ -18,28 +19,30 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8F7F4]">
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block">
-        <Sidebar session={session} />
-      </div>
-
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* Mobile Header */}
-        <MobileHeader />
-
-        {/* Desktop Navbar */}
+    <MobileHeaderProvider>
+      <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8F7F4]">
+        {/* Desktop Sidebar */}
         <div className="hidden lg:block">
-          <Navbar session={session} />
+          <Sidebar session={session} />
         </div>
 
-        <main className="p-4 lg:p-8 flex-1 overflow-y-auto pb-24 lg:pb-8">
-          {children}
-        </main>
+        <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+          {/* Mobile Header */}
+          <MobileHeader />
 
-        {/* Mobile Navigation */}
-        <MobileBottomNav />
+          {/* Desktop Navbar */}
+          <div className="hidden lg:block">
+            <Navbar session={session} />
+          </div>
+
+          <main data-scroll-container className="p-4 lg:p-8 flex-1 overflow-y-auto pb-24 lg:pb-8 pt-20 lg:pt-8">
+            {children}
+          </main>
+
+          {/* Mobile Navigation */}
+          <MobileBottomNav />
+        </div>
       </div>
-    </div>
+    </MobileHeaderProvider>
   );
 }

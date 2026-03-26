@@ -42,13 +42,13 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Desktop Header */}
-      <div className="hidden lg:flex items-center justify-between mb-8">
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-4 px-4 lg:px-0">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
             Selamat Datang, {session?.user?.name || "User"}
           </h1>
-          <p className="text-gray-600 font-medium italic">
+          <p className="text-gray-600 font-medium italic text-sm lg:text-base">
             Kelola bisnis Anda dengan ringkasan performa hari ini.
           </p>
         </div>
@@ -56,13 +56,13 @@ export default function DashboardPage() {
           <Link
             href={`/s/${tenantSlug}`}
             target="_blank"
-            className="flex items-center text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-lg transition-all"
+            className="flex items-center justify-center text-sm font-bold text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-3 rounded-xl transition-all w-full lg:w-auto"
           >
             Lihat Toko Online
             <ExternalLink className="ml-2 h-4 w-4" />
           </Link>
         ) : (
-          <span className="flex items-center text-sm font-bold text-slate-400 bg-slate-100 px-4 py-2 rounded-lg">
+          <span className="flex items-center justify-center text-sm font-bold text-slate-400 bg-slate-100 px-4 py-3 rounded-xl w-full lg:w-auto">
             Toko Online
             <ExternalLink className="ml-2 h-4 w-4" />
           </span>

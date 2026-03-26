@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useMobileSearch } from "@/hooks/useMobileSearch";
 
 type RecipeItem = {
   id: string;
@@ -57,6 +58,9 @@ export default function RecipesClient({
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
+  // Connect to mobile header search
+  useMobileSearch(useCallback((q) => setSearchQuery(q), []));
+
   const filteredProducts = useMemo(() => {
     return products.filter(p => 
       p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -87,41 +91,8 @@ export default function RecipesClient({
 
   return (
     <div className="space-y-6 pb-24 lg:pb-10">
-      {/* --- DASHBOARD MOBILE HEADER & SEARCH (Mobile Only) --- */}
-      <div className="lg:hidden space-y-6">
-        <div className="flex items-center justify-between -mt-2">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#FF724C]/10 flex items-center justify-center text-[#FF724C]">
-              <ScrollText className="w-6 h-6" />
-            </div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Recipe Manager</h1>
-          </div>
-          <button className="p-2 text-[#FF724C] hover:bg-orange-50 rounded-lg transition-colors">
-            <Search className="w-6 h-6" />
-          </button>
-        </div>
+      {/* Mobile-only header and search are now handled by MobileHeader component */}
 
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400 font-bold" />
-          </div>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="block w-full p-4 pl-12 text-sm text-gray-900 border border-gray-100 rounded-2xl bg-white focus:ring-2 focus:ring-[#FF724C] focus:outline-none transition-all shadow-sm"
-            placeholder="Cari resep..."
-          />
-        </div>
-
-        <Link
-          href="/dashboard/recipes/new"
-          className="flex items-center justify-center gap-2 w-full py-4 bg-[#FF724C] hover:bg-[#FF724C]/90 text-white rounded-2xl text-base font-bold shadow-md shadow-[#FF724C]/20 transition-all active:scale-[0.98]"
-        >
-          <Plus className="w-6 h-6" />
-          Tambah Resep
-        </Link>
-      </div>
 
       {/* --- DESKTOP HEADER (Desktop Only) --- */}
       <div className="hidden lg:flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">

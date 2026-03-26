@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useMobileHeader } from "@/context/MobileHeaderContext";
 
 type RecipeItem = {
   id: string;
@@ -51,6 +53,13 @@ export default function RecipeDetailClient({
   ingredients,
 }: RecipeDetailClientProps) {
   const router = useRouter();
+  const { setDetailHeader, clearDetailHeader } = useMobileHeader();
+
+  // Set mobile header to detail mode (back button + product name)
+  useEffect(() => {
+    setDetailHeader(product.name, "/dashboard/recipes", "Detail Resep");
+    return () => clearDetailHeader();
+  }, [product.name, setDetailHeader, clearDetailHeader]);
 
   const totalIngredientCost = product.recipes.reduce((acc, r) => {
     const ing = ingredients.find((i) => i.id === r.ingredientId);

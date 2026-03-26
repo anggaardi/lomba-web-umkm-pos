@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Trash2,
@@ -23,6 +23,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { useMobileHeader } from "@/context/MobileHeaderContext";
 
 interface Ingredient {
   id: string;
@@ -66,6 +67,7 @@ export default function RecipeRegistrationClient({
   initialData,
 }: RecipeRegistrationClientProps) {
   const router = useRouter();
+  const { setDetailHeader, clearDetailHeader } = useMobileHeader();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,6 +80,14 @@ export default function RecipeRegistrationClient({
   const [recipeItems, setRecipeItems] = useState<RecipeIngredient[]>(
     initialData?.recipeItems?.length ? initialData.recipeItems : [{ ingredientId: "", quantity: 0, unit: "", cost: 0 }]
   );
+
+  // Set mobile header
+  useEffect(() => {
+    const title = name || (initialData ? "Tanpa Nama" : "Resep Baru");
+    const subTitle = initialData ? "Edit Resep" : "Tambah Resep";
+    setDetailHeader(title, "/dashboard/recipes", subTitle);
+    return () => clearDetailHeader();
+  }, [name, initialData, setDetailHeader, clearDetailHeader]);
   const [laborEstimate, setLaborEstimate] = useState<number>(5000);
   const [imagePreview, setImagePreview] = useState<string | null>(initialData?.image || null);
   const [basePriceDisplay, setBasePriceDisplay] = useState<string>(
