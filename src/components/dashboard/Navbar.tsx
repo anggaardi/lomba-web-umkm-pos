@@ -74,16 +74,16 @@ export function Navbar({
           </div>
           <input
             type="search"
-            className="block w-full p-3 pl-12 text-sm text-gray-900 border-0 rounded-xl bg-[#FFEFEB]/50 focus:ring-2 focus:ring-[#FF724C] focus:outline-none transition-all"
+            className="block w-full p-3 pl-12 text-sm text-gray-900 border-0 rounded-xl bg-primary-light/50 focus:ring-2 focus:ring-primary focus:outline-none transition-all"
             placeholder="Search activities, products..."
           />
         </div>
       </div>
 
       <div className="flex items-center space-x-6">
-        <button className="p-3 text-gray-500 hover:bg-[#FFEFEB] rounded-xl transition-colors relative">
+        <button className="p-3 text-gray-500 hover:bg-primary-light rounded-xl transition-colors relative">
           <Bell className="h-6 w-6" />
-          <span className="absolute top-3 right-3 h-2.5 w-2.5 bg-[#FF724C] rounded-full border-2 border-white"></span>
+          <span className="absolute top-3 right-3 h-2.5 w-2.5 bg-primary rounded-full border-2 border-white"></span>
         </button>
 
         <div className="flex items-center space-x-4 pl-6 border-l border-gray-100">
@@ -95,7 +95,7 @@ export function Navbar({
               {session?.user?.role?.toLowerCase().replace("_", " ") || "Member"}
             </p>
           </div>
-          <div className="h-11 w-11 rounded-xl bg-[#FF724C] flex items-center justify-center text-white font-bold shadow-lg shadow-[#FF724C]/20">
+          <div className="h-11 w-11 rounded-xl bg-primary flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20">
             {session?.user?.name?.[0]?.toUpperCase() || (
               <User className="h-6 w-6" />
             )}

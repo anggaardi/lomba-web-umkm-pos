@@ -19,6 +19,10 @@ import { cn } from "@/lib/utils";
 import { useMobileHeader } from "@/context/MobileHeaderContext";
 import { ExpandableSearch } from "./ExpandableSearch";
 
+interface SessionUser {
+  tenantSlug?: string;
+}
+
 export function MobileHeader() {
   const { data: session } = useSession();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -49,7 +53,7 @@ export function MobileHeader() {
     if (isDetailMode) setIsMenuOpen(false);
   }, [isDetailMode]);
 
-  const tenantSlug = (session?.user as any)?.tenantSlug;
+  const tenantSlug = (session?.user as SessionUser)?.tenantSlug;
 
   const secondaryMenu = [
     { icon: MonitorSmartphone, label: "POS Kasir", href: "/dashboard/pos" },
@@ -59,7 +63,7 @@ export function MobileHeader() {
       icon: ExternalLink, 
       label: "Lihat Toko Online", 
       href: `/s/${tenantSlug}`,
-      target: "_blank"
+      target: "_blank" as const
     }] : []),
   ];
 
@@ -109,7 +113,7 @@ export function MobileHeader() {
                 <>
                   <button className="p-2 text-gray-400 bg-gray-50 rounded-full relative transition-colors hover:bg-gray-100">
                     <Bell className="h-6 w-6" />
-                    <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-[#FF724C] rounded-full border-2 border-white" />
+                    <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-primary rounded-full border-2 border-white" />
                   </button>
                 </>
               )}
@@ -123,7 +127,7 @@ export function MobileHeader() {
                 clearDetailHeader();
                 router.push(backUrl!);
               }}
-                className="flex items-center justify-center p-2 -ml-2 text-gray-500 hover:text-[#FF724C] transition-colors shrink-0 group"
+                className="flex items-center justify-center p-2 -ml-2 text-gray-500 hover:text-primary transition-colors shrink-0 group"
                 aria-label="Kembali"
               >
                 <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
@@ -142,7 +146,7 @@ export function MobileHeader() {
             <div className="flex items-center gap-2 shrink-0">
               <button className="p-2 text-gray-400 bg-gray-50 rounded-full relative transition-colors hover:bg-gray-100">
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-2 right-2 h-2 w-2 bg-[#FF724C] rounded-full border-2 border-white" />
+                <span className="absolute top-2 right-2 h-2 w-2 bg-primary rounded-full border-2 border-white" />
               </button>
             </div>
           </>
@@ -166,7 +170,7 @@ export function MobileHeader() {
                   href={item.href}
                   target={item.target}
                   onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-4 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-[#FFEFEB] hover:text-[#FF724C] rounded-2xl transition-all"
+                  className="flex items-center gap-4 px-4 py-3 text-sm font-bold text-gray-700 hover:bg-primary-light hover:text-primary rounded-2xl transition-all"
                 >
                   <div className="p-2 bg-gray-50 rounded-xl transition-colors">
                     <item.icon className="h-5 w-5" />

@@ -6,8 +6,6 @@ import {
   Edit, 
   FileDown, 
   RefreshCw,
-  CheckCircle2,
-  AlertTriangle,
   History,
   Target,
   ArrowLeft,
@@ -16,32 +14,10 @@ import {
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { useMobileHeader } from "@/context/MobileHeaderContext";
-
-type RecipeItem = {
-  id: string;
-  ingredientId: string;
-  ingredientName: string;
-  quantity: number;
-  unit: string;
-};
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-  image?: string | null;
-  recipes: RecipeItem[];
-};
-
-type Ingredient = {
-  id: string;
-  name: string;
-  stock: number;
-  unit: string;
-  averageCostPerUnit: number;
-};
+import { type Product, type Ingredient } from "../types";
+import { IngredientTable } from "./IngredientTable";
 
 interface RecipeDetailClientProps {
   product: Product;
@@ -66,25 +42,21 @@ export default function RecipeDetailClient({
     return acc + r.quantity * (ing?.averageCostPerUnit || 0);
   }, 0);
 
-  // Biaya operasional disesuaikan ke Rupiah (Placeholder realistis)
+  // Biaya operasional realistis (berdasarkan standar UMKM)
   const directLabor = 5000;
   const packagingMaterials = 2000;
   const overheadUtilities = 3000;
   const totalProductionCost = totalIngredientCost + directLabor + packagingMaterials + overheadUtilities;
   
-  const targetMargin = 68;
-  const batchAvailability = 42;
-
-  const formatRupiah = (val: number) => {
-      return "Rp " + val.toLocaleString("id-ID", { maximumFractionDigits: 0 });
-  };
+  const targetMargin = product.price > 0 ? ((product.price - totalProductionCost) / product.price * 100) : 0;
+  const batchAvailability = 42; 
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9]/50 pb-16">
+    <div className="min-h-screen pb-16">
       <div className="max-w-[1400px] mx-auto p-4 sm:p-8 space-y-8">
         <button 
           onClick={() => router.push("/dashboard/recipes")}
-          className="flex items-center gap-2 text-slate-500 hover:text-[#FF724C] transition-colors font-bold text-sm group"
+          className="flex items-center gap-2 text-slate-500 hover:text-primary transition-colors font-bold text-sm group"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
           Kembali ke Daftar Resep
@@ -110,7 +82,7 @@ export default function RecipeDetailClient({
           
           <div className="grow space-y-3 text-center md:text-left">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-              <span className="px-3 py-1 bg-[#FFF0EB] text-[#FF724C] text-[10px] font-black rounded uppercase tracking-wider">
+              <span className="px-3 py-1 bg-primary-light text-primary text-[10px] font-black rounded uppercase tracking-wider">
                 MAKANAN / BAKERY
               </span>
               <span className="text-slate-400 text-xs font-bold font-mono">
@@ -128,15 +100,15 @@ export default function RecipeDetailClient({
             
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 pt-1">
               <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
-                <Clock className="w-4 h-4 text-[#FF724C]" />
+                <Clock className="w-4 h-4 text-primary" />
                 Estimasi: 15 Menit
               </div>
               <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
-                <Target className="w-4 h-4 text-[#FF724C]" />
+                <Target className="w-4 h-4 text-primary" />
                 Hasil: 1 Porsi / Unit
               </div>
               <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs">
-                <History className="w-4 h-4 text-[#FF724C]" />
+                <History className="w-4 h-4 text-primary" />
                 Terakhir Update: {new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
               </div>
             </div>
@@ -149,7 +121,7 @@ export default function RecipeDetailClient({
             >
               <Edit className="w-4 h-4" /> Edit Resep
             </button>
-            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-[#FF724C] text-white rounded-xl text-sm font-bold hover:bg-[#E65A33] transition-all shadow-lg shadow-[#FF724C]/20">
+            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold hover:bg-primary-dark transition-all shadow-lg shadow-primary/20">
               <FileDown className="w-4 h-4" /> Ekspor PDF
             </button>
           </div>
@@ -161,7 +133,7 @@ export default function RecipeDetailClient({
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Biaya Produksi (HPP)</p>
             <div className="flex items-end justify-between">
               <div>
-                <span className="text-xl font-black text-slate-800">{formatRupiah(totalProductionCost)}</span>
+                <span className="text-xl font-black text-slate-800">{formatCurrency(totalProductionCost)}</span>
                 <span className="text-slate-400 text-[10px] ml-1">/ unit</span>
               </div>
               <span className="px-2 py-1 bg-emerald-50 text-emerald-600 text-[10px] font-black rounded tracking-wider">
@@ -173,7 +145,7 @@ export default function RecipeDetailClient({
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Margin Keuntungan</p>
             <div className="flex items-end justify-between">
-              <span className="text-2xl font-black text-slate-800">{targetMargin}%</span>
+              <span className="text-2xl font-black text-slate-800">{targetMargin.toFixed(1)}%</span>
               <span className="text-slate-400 text-[10px] font-bold">Target: 60%</span>
             </div>
           </div>
@@ -181,7 +153,7 @@ export default function RecipeDetailClient({
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Harga Jual</p>
             <div className="flex items-end gap-2">
-              <span className="text-xl font-black text-slate-800">{formatRupiah(product.price)}</span>
+              <span className="text-xl font-black text-slate-800">{formatCurrency(product.price)}</span>
               <span className="text-slate-400 text-[10px] mb-1">/ unit</span>
             </div>
           </div>
@@ -194,7 +166,7 @@ export default function RecipeDetailClient({
                 <span className="text-slate-400 text-[10px] mb-1">Porsi Ready</span>
               </div>
               <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-[#FF724C] h-full w-[80%]" />
+                <div className="bg-primary h-full w-[80%]" />
               </div>
             </div>
           </div>
@@ -216,66 +188,23 @@ export default function RecipeDetailClient({
                 </div>
               </div>
               <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex items-start gap-3 shadow-sm shadow-blue-900/5">
-                  <div className="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white shrink-0">
-                      <Info className="w-4 h-4" />
-                  </div>
-                  <div className="space-y-1">
-                      <p className="text-xs font-black text-blue-900 uppercase tracking-widest">Panduan Tabel Resep</p>
-                      <p className="text-[11px] text-blue-700 leading-relaxed font-medium">
-                          Tabel di bawah ini menjelaskan rincian bahan baku yang dibutuhkan. 
-                          <b> Nama Bahan:</b> material baku yang digunakan. 
-                          <b> Takaran per Porsi:</b> jumlah bahan untuk satu porsi. 
-                          <b> Stok Tersedia:</b> jumlah material yang tersisa di gudang. 
-                          <b> Status:</b> indikator apakah stok cukup untuk memproduksi porsi ini.
-                      </p>
-                  </div>
+                <div className="w-6 h-6 rounded-lg bg-blue-500 flex items-center justify-center text-white shrink-0">
+                  <Info className="w-4 h-4" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-black text-blue-900 uppercase tracking-widest">Panduan Tabel Resep</p>
+                  <p className="text-[11px] text-blue-700 leading-relaxed font-medium">
+                    Tabel di bawah ini menjelaskan rincian bahan baku yang dibutuhkan. 
+                    <b> Nama Bahan:</b> material baku yang digunakan. 
+                    <b> Takaran per Porsi:</b> jumlah bahan untuk satu porsi. 
+                    <b> Stok Tersedia:</b> jumlah material yang tersisa di gudang. 
+                    <b> Status:</b> indikator apakah stok cukup untuk memproduksi porsi ini.
+                  </p>
+                </div>
               </div>
             </div>
             
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-              <table className="w-full text-left">
-                <thead className="bg-[#F8FAFC]/50 border-b border-slate-100">
-                  <tr>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Nama Bahan Baku</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Takaran per Porsi</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Stok di Gudang</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {product.recipes.map((r, idx) => {
-                    const ing = ingredients.find(i => i.id === r.ingredientId);
-                    const isLow = ing && ing.stock < r.quantity;
-                    return (
-                      <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-6">
-                          <p className="font-bold text-slate-700 uppercase text-xs tracking-tight">{r.ingredientName}</p>
-                        </td>
-                        <td className="px-6 py-6 text-right">
-                          <p className="font-bold text-slate-600 font-mono text-xs">{r.quantity.toFixed(2)} {r.unit}</p>
-                        </td>
-                        <td className="px-6 py-6 text-right">
-                          <p className="font-bold text-slate-600 font-mono text-xs">{ing ? `${ing.stock.toFixed(1)} ${r.unit}` : "-"}</p>
-                        </td>
-                        <td className="px-6 py-6">
-                          <div className="flex justify-center">
-                            {isLow ? (
-                              <div className="w-6 h-6 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500" title="Stok Menipis - Mohon isi ulang">
-                                <AlertTriangle className="w-4 h-4" />
-                              </div>
-                            ) : (
-                              <div className="w-6 h-6 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-500" title="Stok Mencukupi">
-                                <CheckCircle2 className="w-4 h-4" />
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <IngredientTable product={product} ingredients={ingredients} />
           </div>
 
           {/* Right Column: Cost Calculation */}
@@ -292,15 +221,15 @@ export default function RecipeDetailClient({
                 ].map((item) => (
                   <div key={item.label} className="flex justify-between items-center">
                     <span className="text-slate-400 font-bold text-xs uppercase tracking-tight">{item.label}</span>
-                    <span className="text-slate-800 font-black text-sm">{formatRupiah(item.value)}</span>
+                    <span className="text-slate-800 font-black text-sm">{formatCurrency(item.value)}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="bg-[#FFF0EB] p-5 rounded-2xl flex flex-col gap-1 border border-orange-100 shadow-sm shadow-orange-900/5">
-                <span className="text-[10px] font-black text-[#FF724C] uppercase tracking-widest">Estimasi Modal (HPP) / Porsi</span>
+              <div className="bg-primary-light p-5 rounded-2xl flex flex-col gap-1 border border-primary/20 shadow-sm shadow-primary/5">
+                <span className="text-[10px] font-black text-primary uppercase tracking-widest">Estimasi Modal (HPP) / Porsi</span>
                 <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-black text-[#FF724C] tracking-tighter">{formatRupiah(totalProductionCost)}</span>
+                    <span className="text-3xl font-black text-primary tracking-tighter">{formatCurrency(totalProductionCost)}</span>
                 </div>
               </div>
 
@@ -308,17 +237,17 @@ export default function RecipeDetailClient({
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Analisis Keuntungan</span>
-                    <span className="text-xs font-black text-emerald-600">+{((product.price - totalProductionCost) / product.price * 100).toFixed(1)}% Margin</span>
+                    <span className="text-xs font-black text-emerald-600">+{targetMargin.toFixed(1)}% Margin</span>
                   </div>
                   <div className="h-2 w-full bg-slate-100 rounded-full relative overflow-hidden">
-                    <div className="absolute left-0 top-0 h-full w-[70%] bg-emerald-500 rounded-full" />
+                    <div className="absolute left-0 top-0 h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${Math.min(100, targetMargin)}%` }} />
                   </div>
                 </div>
                 
-                <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic border-l-2 border-[#FF724C] pl-3">
+                <p className="text-[10px] text-slate-400 font-medium leading-relaxed italic border-l-2 border-primary pl-3">
                   Data HPP di atas dihitung secara otomatis berdasarkan harga rata-rata bahan baku dan estimasi biaya operasional yang Anda masukkan.
                 </p>
-                <button className="w-full py-4 bg-[#FF724C] text-white rounded-xl font-bold text-sm hover:bg-[#E65A33] transition-all flex items-center justify-center gap-3 shadow-lg shadow-[#FF724C]/20 active:scale-95">
+                <button className="w-full py-4 bg-primary text-white rounded-xl font-bold text-sm hover:bg-primary-dark transition-all flex items-center justify-center gap-3 shadow-lg shadow-primary/20 active:scale-95">
                   <RefreshCw className="w-4 h-4" /> Perbarui Kalkulasi
                 </button>
               </div>

@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useCallback } from "react";
 import { useMobileHeader } from "@/context/MobileHeaderContext";
 
@@ -7,7 +5,9 @@ import { useMobileHeader } from "@/context/MobileHeaderContext";
 export function useMobileSearch(handler: (query: string) => void): string {
   const { registerSearchHandler, clearSearchHandler, searchQuery } = useMobileHeader();
 
-  const stableHandler = useCallback(handler, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Intentionally stable: handler is memoized by the calling component via useCallback
+  const stableHandler = useCallback(handler, [handler]);
 
   useEffect(() => {
     registerSearchHandler(stableHandler);

@@ -62,7 +62,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "relative flex h-screen flex-col bg-[#FF724C] transition-all duration-300 ease-in-out",
+        "relative flex h-screen flex-col bg-primary transition-all duration-300 ease-in-out",
         isCollapsed ? "w-20" : "w-64"
       )}
     >
@@ -111,7 +111,7 @@ export function Sidebar({
                 "group relative flex items-center py-3 transition-all duration-300",
                 isCollapsed ? "justify-center px-0" : "px-6",
                 isActive
-                  ? "bg-[#FFEFEB] text-[#FF724C] rounded-l-full ml-4 shadow-lg"
+                  ? "bg-primary-light text-primary rounded-l-full ml-4 shadow-lg"
                   : "text-white hover:bg-[#813531]/20"
               )}
             >
@@ -121,7 +121,7 @@ export function Sidebar({
                   className={cn(
                     "h-6 w-6 transition-colors",
                     isActive
-                      ? "text-[#FF724C]"
+                      ? "text-primary"
                       : "text-white group-hover:scale-110",
                     !isCollapsed && "mr-4"
                   )}

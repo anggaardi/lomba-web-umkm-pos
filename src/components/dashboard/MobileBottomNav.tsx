@@ -65,12 +65,12 @@ export function MobileBottomNav() {
             href={item.href}
             className={cn(
               "flex flex-col items-center justify-center space-y-1 transition-all",
-              isActive ? "text-[#FF724C]" : "text-gray-400"
+              isActive ? "text-primary" : "text-gray-400"
             )}
           >
             <div className={cn(
               "p-2 rounded-xl transition-all",
-              isActive ? "bg-[#FFEFEB]" : "bg-transparent"
+              isActive ? "bg-primary-light" : "bg-transparent"
             )}>
               <Icon className="h-6 w-6 font-bold" />
             </div>
