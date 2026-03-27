@@ -4,12 +4,12 @@ import { NextResponse } from "next/server";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { tenant } = await requireTenant();
     const { name, image } = await req.json();
-    const id = params.id;
+    const { id } = await params;
 
     const category = await prisma.category.update({
       where: { id, tenantId: tenant.id },
@@ -27,11 +27,11 @@ export async function PATCH(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { tenant } = await requireTenant();
-    const id = params.id;
+    const { id } = await params;
 
     await prisma.category.delete({
       where: { id, tenantId: tenant.id },

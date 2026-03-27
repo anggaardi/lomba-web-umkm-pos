@@ -77,7 +77,7 @@ export default function DashboardPage() {
           trend="+12% vs kemarin"
           trendUp={true}
           icon={TrendingUp}
-          color="#FF724C"
+          color="var(--color-primary)"
           className="min-w-[200px] lg:min-w-0 shrink-0"
         />
         <StatCard 
@@ -145,7 +145,7 @@ export default function DashboardPage() {
           <div className="flex items-center space-x-12 mt-8 pt-6 border-t border-gray-50 flex-wrap gap-y-4 lg:flex-nowrap">
             <div>
               <p className="text-sm font-medium text-gray-400 mb-1">Total Minggu ini</p>
-              <p className="text-3xl font-black text-[#FF724C]">Rp 15,5jt</p>
+              <p className="text-3xl font-black text-primary">Rp 15,5jt</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-400 mb-1">Jam Tersibuk</p>
@@ -207,7 +207,7 @@ export default function DashboardPage() {
               <AlertTriangle className="h-5 w-5 text-yellow-500 fill-yellow-500/20" />
               <h3 className="text-base font-bold text-gray-900 uppercase tracking-wider">Alert Stok</h3>
             </div>
-            <button className="px-4 py-1.5 text-xs font-bold text-[#FF724C] border border-[#FF724C] rounded-lg hover:bg-[#FFEFEB] transition-colors">
+            <button className="px-4 py-1.5 text-xs font-bold text-primary border border-primary rounded-lg hover:bg-primary-light transition-colors">
               Kelola
             </button>
           </div>
@@ -275,7 +275,7 @@ function StockProgress({ name, sisa, min, percent, status, color }: any) {
 function TopMenuItem({ rank, name, sold, revenue, image }: any) {
   const getRankColor = (r: number) => {
     switch(r) {
-      case 1: return "bg-[#FFEFEB] text-[#FF724C]";
+      case 1: return "bg-primary-light text-primary";
       case 2: return "bg-gray-50 text-gray-400";
       case 3: return "bg-[#FFF9E6] text-[#F2C94C]";
       default: return "bg-gray-100 text-gray-500";
@@ -294,7 +294,7 @@ function TopMenuItem({ rank, name, sold, revenue, image }: any) {
           <p className="text-xs font-medium text-gray-400">{sold} terjual hari ini</p>
         </div>
       </div>
-      <p className="text-sm font-black text-[#FF724C]">{revenue}</p>
+      <p className="text-sm font-black text-primary">{revenue}</p>
     </div>
   );
 }
