@@ -15,6 +15,7 @@ interface MobileCardProps {
   onCancelEdit: () => void;
   minStockError: string | null;
   setEditMinStockValue: (val: number) => void;
+  onEdit: () => void;
 }
 
 export function MobileInventoryCard({
@@ -28,6 +29,7 @@ export function MobileInventoryCard({
   onCancelEdit,
   minStockError,
   setEditMinStockValue,
+  onEdit,
 }: MobileCardProps) {
   const status = getStockStatus(ing.stock, ing.minStock ?? 0);
   const isLow = status === "MENIPIS";
@@ -89,6 +91,13 @@ export function MobileInventoryCard({
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={onEdit}
+            className="p-3 border border-slate-100 rounded-2xl text-slate-400 hover:text-primary active:scale-95 transition-all"
+            title="Edit Bahan"
+          >
+            <Pencil className="w-5 h-5" />
+          </button>
+          <button
             onClick={onPackaging}
             className="p-3 border border-slate-100 rounded-2xl text-slate-400 hover:text-primary active:scale-95 transition-all"
             title="Kelola Kemasan"
@@ -118,6 +127,7 @@ interface DesktopRowProps {
   onRestock: () => void;
   onPackaging: () => void;
   onEditStart: () => void;
+  onEdit: () => void;
 }
 
 export function DesktopInventoryRow({
@@ -131,6 +141,7 @@ export function DesktopInventoryRow({
   onRestock,
   onPackaging,
   onEditStart,
+  onEdit,
 }: DesktopRowProps) {
   const status = getStockStatus(ing.stock, ing.minStock ?? 0);
   const isLow = status === "MENIPIS";
@@ -195,7 +206,8 @@ export function DesktopInventoryRow({
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex items-center justify-end gap-2">
-          <button onClick={onPackaging} className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-primary active:scale-95 transition-all"><Box className="w-4 h-4" /></button>
+          <button onClick={onEdit} className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-primary active:scale-95 transition-all" title="Edit Bahan"><Pencil className="w-4 h-4" /></button>
+          <button onClick={onPackaging} className="p-2 border border-slate-200 rounded-lg text-slate-400 hover:text-primary active:scale-95 transition-all" title="Kelola Kemasan"><Box className="w-4 h-4" /></button>
           <button onClick={onRestock} className="px-3 py-1.5 bg-primary text-white rounded-lg text-[10px] font-bold hover:bg-primary-dark active:scale-95 flex items-center gap-1.5 whitespace-nowrap"><Plus className="w-3 h-3" /> BELANJA</button>
         </div>
       </td>

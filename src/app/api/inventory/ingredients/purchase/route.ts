@@ -2,12 +2,16 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant, handleAuthError } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { ingredientPurchaseSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rateLimit";
 
+const limiter = rateLimit(10, 60000);
 // POST /api/inventory/ingredients/purchase
 // Handle ingredient purchase with UOM conversion
 export async function POST(req: Request) {
   try {
     const { tenant } = await requireTenant();
+    const rateLimitResponse = await limiter(req);
+    if (rateLimitResponse) return rateLimitResponse;
     const body = await req.json();
     
     const validation = ingredientPurchaseSchema.safeParse(body);

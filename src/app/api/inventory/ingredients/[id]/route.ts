@@ -2,10 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant, handleAuthError } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { recordStockMovement } from "@/lib/inventory";
-import { ingredientUpdateStockSchema, ingredientMinStockUpdateSchema } from "@/lib/validations";
+import { ingredientUpdateStockSchema, ingredientMinStockUpdateSchema, ingredientUpdateSchema } from "@/lib/validations";
 
 // PATCH /api/inventory/ingredients/[id]
-// Handle manual restock or adjustments
+// Handle manual restock, adjustments, or general updates
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -15,9 +15,9 @@ export async function PATCH(
     const { id: ingredientId } = await params;
     const body = await req.json();
 
-    // If body contains 'minStock' but not 'quantity', handle as minStock update
-    if ('minStock' in body && !('quantity' in body)) {
-      const validation = ingredientMinStockUpdateSchema.safeParse(body);
+    // 1. General Info Update (Name, Unit, MinStock)
+    if (('name' in body || 'unit' in body || 'minStock' in body) && !('quantity' in body)) {
+      const validation = ingredientUpdateSchema.safeParse(body);
       if (!validation.success) {
         return NextResponse.json(
           { error: validation.error.issues[0].message },
@@ -28,7 +28,7 @@ export async function PATCH(
       try {
         const ingredient = await prisma.ingredient.update({
           where: { id: ingredientId, tenantId: tenant.id },
-          data: { minStock: validation.data.minStock },
+          data: validation.data,
         });
         return NextResponse.json({ ingredient });
       } catch (e: unknown) {
@@ -38,6 +38,8 @@ export async function PATCH(
         throw e;
       }
     }
+
+    // 2. Stock Movement Update
 
     const validation = ingredientUpdateStockSchema.safeParse(body);
     if (!validation.success) {

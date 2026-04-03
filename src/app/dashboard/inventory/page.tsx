@@ -9,18 +9,29 @@ export default async function InventoryPage() {
   try {
     const { tenant } = await requireTenant();
 
-    // 1. Fetch Ingredients with Packagings
-    const ingredients = await prisma.ingredient.findMany({
-      where: {
-        tenantId: tenant.id,
-      },
-      include: {
-        packagings: true,
-      },
-      orderBy: {
-        name: "asc",
-      },
-    });
+    const limit = 10;
+    const [ingredients, totalItems, outOfStockCount] = await Promise.all([
+      prisma.ingredient.findMany({
+        where: { tenantId: tenant.id },
+        include: { packagings: true },
+        orderBy: { name: "asc" },
+        take: limit,
+        skip: 0,
+      }),
+      prisma.ingredient.count({ where: { tenantId: tenant.id } }),
+      prisma.ingredient.count({ where: { tenantId: tenant.id, stock: { lte: 0 } } }),
+    ]);
+
+    // Low stock: stock > 0 AND stock <= minStock (requires raw SQL for column comparison)
+    const lowStockResult = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) as count 
+      FROM "Ingredient" 
+      WHERE "tenantId" = ${tenant.id} 
+        AND stock > 0 
+        AND "minStock" > 0 
+        AND stock <= "minStock"
+    `;
+    const lowStockCount = Number(lowStockResult[0]?.count ?? 0);
 
     // Format Ingredients for client
     const formattedIngredients = ingredients.map((ing) => ({
@@ -32,16 +43,33 @@ export default async function InventoryPage() {
       averageCostPerUnit: Number(ing.averageCostPerUnit),
       lastPurchasePrice: ing.lastPurchasePrice ? Number(ing.lastPurchasePrice) : null,
       updatedAt: ing.updatedAt.toISOString(),
-      packagings: ing.packagings.map(p => ({
+      packagings: (ing.packagings || []).map(p => ({
         id: p.id,
         name: p.name,
         conversionValue: p.conversionValue
       })),
     }));
 
+    const paginationMetadata = {
+      totalItems,
+      totalPages: Math.ceil(totalItems / limit),
+      currentPage: 1,
+      limit,
+    };
+
+    const initialStats = {
+      total: totalItems,
+      lowStock: lowStockCount,
+      outOfStock: outOfStockCount,
+    };
+
     return (
       <div className="container mx-auto py-6">
-        <InventoryClient initialIngredients={formattedIngredients} />
+        <InventoryClient 
+          initialIngredients={formattedIngredients} 
+          initialPagination={paginationMetadata}
+          initialStats={initialStats}
+        />
       </div>
     );
   } catch (error) {

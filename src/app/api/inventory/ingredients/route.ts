@@ -2,19 +2,68 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant, handleAuthError } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { ingredientCreateSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rateLimit";
+
+const limiter = rateLimit(10, 60000); 
 
 // GET /api/inventory/ingredients
-// List all ingredients for the tenant
-export async function GET() {
+// List ingredients for the tenant with pagination support
+export async function GET(req: Request) {
   try {
     const { tenant } = await requireTenant();
+    
+    // Apply rate limit check
+    const rateLimitResponse = await limiter(req);
+    if (rateLimitResponse) return rateLimitResponse;
+
+    const { searchParams } = new URL(req.url);
+    
+    // Pagination params
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const skip = (page - 1) * limit;
+
+    // Get total count & global stats (across ALL data, not just current page)
+    const [totalItems, outOfStockCount] = await Promise.all([
+      prisma.ingredient.count({ where: { tenantId: tenant.id } }),
+      prisma.ingredient.count({ where: { tenantId: tenant.id, stock: { lte: 0 } } }),
+    ]);
+
+    // MENIPIS requires column comparison (stock <= minStock), use raw query
+    const lowStockResult = await prisma.$queryRaw<{ count: bigint }[]>`
+      SELECT COUNT(*) as count 
+      FROM "Ingredient" 
+      WHERE "tenantId" = ${tenant.id} 
+        AND stock > 0 
+        AND "minStock" > 0 
+        AND stock <= "minStock"
+    `;
+    const lowStockCount = Number(lowStockResult[0]?.count ?? 0);
 
     const ingredients = await prisma.ingredient.findMany({
       where: { tenantId: tenant.id },
       orderBy: { name: "asc" },
+      skip,
+      take: limit,
+      include: {
+        packagings: true,
+      },
     });
 
-    return NextResponse.json({ ingredients });
+    return NextResponse.json({ 
+      ingredients,
+      pagination: {
+        totalItems,
+        totalPages: Math.ceil(totalItems / limit),
+        currentPage: page,
+        limit,
+      },
+      globalStats: {
+        total: totalItems,
+        lowStock: lowStockCount,
+        outOfStock: outOfStockCount,
+      },
+    });
   } catch (error: unknown) {
     return handleAuthError(error);
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react"; // useMemo still used for filteredIngredients
 import { 
   Box, 
   Plus, 
@@ -26,15 +26,31 @@ import { MobileInventoryCard, DesktopInventoryRow } from "./_components/Inventor
 import { RegisterIngredientModal } from "./_components/RegisterIngredientModal";
 import { RestockModal } from "./_components/RestockModal";
 import { PackagingModal } from "./_components/PackagingModal";
+import { EditIngredientModal } from "./_components/EditIngredientModal";
 
 interface InventoryClientProps {
   initialIngredients: Ingredient[];
+  initialPagination: {
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+    limit: number;
+  };
+  initialStats: {
+    total: number;
+    lowStock: number;
+    outOfStock: number;
+  };
 }
 
 export default function InventoryClient({
   initialIngredients,
+  initialPagination,
+  initialStats,
 }: InventoryClientProps) {
   const [ingredients, setIngredients] = useState<Ingredient[]>(initialIngredients);
+  const [pagination, setPagination] = useState(initialPagination);
+  const [globalStats, setGlobalStats] = useState(initialStats);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -44,6 +60,7 @@ export default function InventoryClient({
 
   // Modal states
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isRestockModalOpen, setIsRestockModalOpen] = useState(false);
   const [isPackagingModalOpen, setIsPackagingModalOpen] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
@@ -68,18 +85,26 @@ export default function InventoryClient({
   const [editMinStockValue, setEditMinStockValue] = useState<number>(0);
   const [minStockError, setMinStockError] = useState<string | null>(null);
 
-  const refreshData = async () => {
+  const fetchPage = async (page: number) => {
     setIsRefreshing(true);
     try {
-      const res = await fetch("/api/inventory/ingredients");
+      const res = await fetch(`/api/inventory/ingredients?page=${page}&limit=${pagination.limit}`);
       if (!res.ok) throw new Error("Gagal mengambil data");
       const data = await res.json();
-      if (data.ingredients) setIngredients(data.ingredients);
+      if (data.ingredients) {
+        setIngredients(data.ingredients);
+        setPagination(data.pagination);
+        if (data.globalStats) setGlobalStats(data.globalStats);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
       setIsRefreshing(false);
     }
+  };
+
+  const refreshData = async () => {
+    fetchPage(pagination.currentPage);
   };
 
   const filteredIngredients = useMemo(() => {
@@ -92,12 +117,8 @@ export default function InventoryClient({
     });
   }, [ingredients, search, statusFilter]);
 
-  const stats = useMemo(() => {
-    const total = ingredients.length;
-    const lowStock = ingredients.filter(i => getStockStatus(i.stock, i.minStock ?? 0) === "MENIPIS").length;
-    const outOfStock = ingredients.filter(i => getStockStatus(i.stock, i.minStock ?? 0) === "HABIS").length;
-    return { total, lowStock, outOfStock };
-  }, [ingredients]);
+  // Stats always come from the server-side global counts, not the current page slice
+  const stats = globalStats;
 
   const handleSaveMinStock = async (ingredientId: string, value: number) => {
     if (value < 0) {
@@ -138,12 +159,51 @@ export default function InventoryClient({
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error("Gagal menambah bahan");
+      const name = String(data.name);
+      toast.success(`Bahan "${name}" berhasil ditambahkan!`);
       setIsAddModalOpen(false);
       setAddInitialStock(0);
       setAddMinStock(0);
       refreshData();
     } catch (err: any) {
+      toast.error(err.message || "Gagal menambah bahan baku");
       setError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditIngredient = async (id: string, data: any) => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/inventory/ingredients/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Gagal memperbarui bahan");
+      toast.success("Bahan berhasil diperbarui");
+      setIsEditModalOpen(false);
+      refreshData();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteIngredient = async (id: string) => {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch(`/api/inventory/ingredients/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Gagal menghapus bahan");
+      toast.success("Bahan berhasil dihapus");
+      setIsEditModalOpen(false);
+      refreshData();
+    } catch (err: any) {
+      toast.error(err.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -174,7 +234,7 @@ export default function InventoryClient({
           ingredientId: selectedIngredient.id,
           packagingId: purchasePackagingId || undefined,
           customConversionValue: purchasePackagingId ? undefined : purchaseCustomValue || 1,
-          quantity: purchaseQty,
+          purchaseQty: purchaseQty,
           totalPrice: purchaseTotalPrice,
         }),
       });
@@ -321,6 +381,7 @@ export default function InventoryClient({
               onCancelEdit={() => setEditingMinStock(null)}
               minStockError={minStockError}
               setEditMinStockValue={setEditMinStockValue}
+              onEdit={() => { setSelectedIngredient(ing); setIsEditModalOpen(true); }}
             />
           ))}
         </div>
@@ -352,11 +413,92 @@ export default function InventoryClient({
                   onRestock={() => { setSelectedIngredient(ing); setIsRestockModalOpen(true); setError(null); }}
                   onPackaging={() => { setSelectedIngredient(ing); setIsPackagingModalOpen(true); setError(null); }}
                   onEditStart={() => { setEditingMinStock(ing.id); setEditMinStockValue(ing.minStock ?? 0); setMinStockError(null); }}
+                  onEdit={() => { setSelectedIngredient(ing); setIsEditModalOpen(true); }}
                 />
               ))}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Section */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-5 bg-white border-t border-slate-100">
+          <p className="text-xs font-bold text-slate-400">
+            Menampilkan <span className="text-slate-700 font-black">{ingredients.length}</span> dari <span className="text-slate-700 font-black">{pagination.totalItems}</span> bahan baku
+          </p>
+
+          {/* Pagination Controls - styled like the reference image */}
+          <div className="flex items-center bg-slate-50 border border-slate-100 rounded-2xl p-1.5 gap-1">
+            {/* First page */}
+            <button
+              onClick={() => fetchPage(1)}
+              disabled={pagination.currentPage <= 1 || isRefreshing}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all active:scale-90 text-xs font-black"
+              title="Halaman pertama"
+            >
+              &#171;
+            </button>
+            {/* Previous page */}
+            <button
+              onClick={() => fetchPage(pagination.currentPage - 1)}
+              disabled={pagination.currentPage <= 1 || isRefreshing}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all active:scale-90 text-xs font-black"
+              title="Halaman sebelumnya"
+            >
+              &#8249;
+            </button>
+
+            {/* Page number buttons */}
+            {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+              .filter(p => Math.abs(p - pagination.currentPage) <= 1 || p === 1 || p === pagination.totalPages)
+              .reduce<(number | "...")[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("...");
+                acc.push(p);
+                return acc;
+              }, [])
+              .map((item, idx) =>
+                item === "..." ? (
+                  <span key={`ellipsis-${idx}`} className="w-9 h-9 flex items-center justify-center text-slate-300 text-xs font-black">
+                    ···
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => fetchPage(item as number)}
+                    disabled={isRefreshing}
+                    className={cn(
+                      "w-9 h-9 flex items-center justify-center rounded-xl text-xs font-black transition-all active:scale-90",
+                      pagination.currentPage === item
+                        ? "bg-primary text-white shadow-md shadow-primary/30"
+                        : "text-slate-400 hover:text-slate-700 hover:bg-white hover:shadow-sm"
+                    )}
+                  >
+                    {item}
+                  </button>
+                )
+              )
+            }
+
+            {/* Next page */}
+            <button
+              onClick={() => fetchPage(pagination.currentPage + 1)}
+              disabled={pagination.currentPage >= pagination.totalPages || isRefreshing}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all active:scale-90 text-xs font-black"
+              title="Halaman berikutnya"
+            >
+              &#8250;
+            </button>
+            {/* Last page */}
+            <button
+              onClick={() => fetchPage(pagination.totalPages)}
+              disabled={pagination.currentPage >= pagination.totalPages || isRefreshing}
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-600 hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all active:scale-90 text-xs font-black"
+              title="Halaman terakhir"
+            >
+              &#187;
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <button onClick={() => setIsAddModalOpen(true)} className="fixed bottom-24 right-6 w-14 h-14 bg-primary text-white rounded-full flex items-center justify-center shadow-lg shadow-primary/40 lg:hidden z-30 active:scale-95 transition-transform">
@@ -373,6 +515,15 @@ export default function InventoryClient({
         setAddInitialStock={setAddInitialStock}
         addMinStock={addMinStock}
         setAddMinStock={setAddMinStock}
+      />
+
+      <EditIngredientModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSubmit={handleEditIngredient}
+        onDelete={handleDeleteIngredient}
+        isSubmitting={isSubmitting}
+        ingredient={selectedIngredient}
       />
 
       <RestockModal

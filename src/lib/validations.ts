@@ -14,6 +14,10 @@ export const ingredientCreateSchema = z.object({
     .nonnegative("Harga awal tidak boleh negatif")
     .optional(),
   minStock: z.coerce.number().nonnegative("Min stok tidak boleh negatif").default(0),
+});export const ingredientUpdateSchema = z.object({
+  name: z.string().min(1, "Nama bahan baku wajib diisi").max(100).optional(),
+  unit: z.string().min(1, "Satuan wajib diisi").max(20).optional(),
+  minStock: z.coerce.number().nonnegative("Min stok tidak boleh negatif").optional(),
 });
 
 export const ingredientMinStockUpdateSchema = z.object({

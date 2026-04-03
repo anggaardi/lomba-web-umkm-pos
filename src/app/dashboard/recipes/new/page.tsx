@@ -34,6 +34,7 @@ export default async function NewRecipePage() {
       name: ing.name,
       unit: ing.unit,
       averageCostPerUnit: Number(ing.averageCostPerUnit),
+      stock: ing.stock, 
     })),
     categories: categories.map((cat) => ({
       id: cat.id,

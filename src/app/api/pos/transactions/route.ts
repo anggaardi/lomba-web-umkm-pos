@@ -3,11 +3,19 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/auth";
 import { deductStockByRecipe, TransactionClient } from "@/lib/inventory";
 import { createPosRequestSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rateLimit";
+
+// POST: 20 req/min (write), GET: 30 req/min (read)
+const writeLimit = rateLimit(20, 60_000);
+const readLimit = rateLimit(30, 60_000);
 
 // POST /api/pos/transactions
 // Membuat transaksi POS baru untuk tenant (ADMIN/STAFF), bukan SUPER_ADMIN.
 export async function POST(req: Request) {
   try {
+    const rateLimitResponse = await writeLimit(req);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const body = await req.json();
     
     // Zod Validation (Medium issue #3)
@@ -197,9 +205,12 @@ export async function POST(req: Request) {
 }
 
 // GET /api/pos/transactions
-// Mengambil riwayat transaksi tenant
+// Mengambil riwayat transaksi tenant dengan pagination
 export async function GET(req: Request) {
   try {
+    const rateLimitResponse = await readLimit(req);
+    if (rateLimitResponse) return rateLimitResponse;
+
     const { user, tenant } = await requireTenant();
 
     if (user.role === "SUPER_ADMIN") {
@@ -210,27 +221,44 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
+
+    // Pagination: limit clamped 1–100, page minimum 1
+    const limit = Math.min(Math.max(Number(searchParams.get("limit") ?? 20), 1), 100);
+    const page = Math.max(Number(searchParams.get("page") ?? 1), 1);
+    const offset = (page - 1) * limit;
     const branchId = searchParams.get("branchId");
 
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        tenantId: tenant.id,
-        ...(branchId ? { branchId } : {}),
-      },
-      include: {
-        items: {
-          include: {
-            product: {
-              select: { name: true },
+    const whereClause = {
+      tenantId: tenant.id,
+      ...(branchId ? { branchId } : {}),
+    };
+
+    const [transactions, total] = await Promise.all([
+      prisma.transaction.findMany({
+        where: whereClause,
+        include: {
+          items: {
+            include: {
+              product: { select: { name: true } },
             },
           },
         },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    });
+        orderBy: { createdAt: "desc" },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.transaction.count({ where: whereClause }),
+    ]);
 
-    return NextResponse.json({ transactions });
+    return NextResponse.json({
+      transactions,
+      pagination: {
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+      },
+    });
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Gagal mengambil data transaksi" },
