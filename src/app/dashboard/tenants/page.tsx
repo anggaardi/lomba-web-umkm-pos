@@ -12,9 +12,23 @@ export default async function TenantsAdminPage() {
     redirect("/dashboard");
   }
 
-  const tenants = await prisma.tenant.findMany({
+  const rawTenants = await prisma.tenant.findMany({
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      whatsappNumber: true,
+      isActive: true,
+      createdAt: true,
+    },
   });
+
+  // Serialize Date → string untuk Client Component
+  const tenants = rawTenants.map((t) => ({
+    ...t,
+    createdAt: t.createdAt.toISOString(),
+  }));
 
   return <TenantsClient tenants={tenants} />;
 }

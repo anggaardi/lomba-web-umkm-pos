@@ -79,3 +79,41 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return handleAuthError(error);
   }
 }
+
+// DELETE /api/inventory/recipes/[id]
+export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const { id: productId } = await params;
+    const { tenant } = await requireTenant();
+
+    // Verify product belongs to this tenant
+    const product = await prisma.product.findFirst({
+      where: { id: productId, tenantId: tenant.id },
+    });
+
+    if (!product) {
+      return NextResponse.json({ error: "Produk tidak ditemukan" }, { status: 404 });
+    }
+
+    const txItemCount = await prisma.transactionItem.count({
+      where: { productId },
+    });
+
+    if (txItemCount > 0) {
+      await prisma.product.update({
+        where: { id: productId },
+        data: { isAvailable: false },
+      });
+    } else {
+      await prisma.$transaction(async (tx) => {
+        await tx.recipe.deleteMany({ where: { productId } });
+        await tx.product.delete({ where: { id: productId } });
+      });
+    }
+
+    return NextResponse.json({ message: "Resep berhasil dihapus" });
+  } catch (error: unknown) {
+    console.error("Recipe delete error:", error);
+    return handleAuthError(error);
+  }
+}

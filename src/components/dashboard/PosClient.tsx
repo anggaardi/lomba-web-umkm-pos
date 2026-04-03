@@ -275,7 +275,7 @@ export function PosClient({
       const data = await response.json();
       setLastTransaction({
         id: data.transaction.id,
-        orderNumber: data.transaction.id.slice(-6).toUpperCase(),
+        orderNumber: data.transaction.transactionNumber || data.transaction.id.slice(-6).toUpperCase(),
         items: cart.map(item => ({ name: item.product.name, quantity: item.quantity, price: item.product.price })),
         subtotal,
         taxAmount,

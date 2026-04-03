@@ -4,6 +4,7 @@ import { requireTenant } from "@/lib/auth";
 import { deductStockByRecipe, TransactionClient } from "@/lib/inventory";
 import { createPosRequestSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rateLimit";
+import { generateTransactionNumber } from "@/lib/transactionNumber";
 
 // POST: 20 req/min (write), GET: 30 req/min (read)
 const writeLimit = rateLimit(20, 60_000);
@@ -142,6 +143,9 @@ export async function POST(req: Request) {
 
     const totalAmount = taxableAmount + taxAmount;
 
+    // Generate nomor transaksi singkat
+    const transactionNumber = await generateTransactionNumber(tenant.id);
+
     // Buat transaksi POS dalam 1 operasi (Atomic: Transaction + TransactionItems + Stock Deduction)
     const transaction = await prisma.$transaction(async (tx) => {
       // 1. Create Transaction record
@@ -149,6 +153,7 @@ export async function POST(req: Request) {
         data: {
           tenantId: tenant.id,
           branchId: resolvedBranchId,
+          transactionNumber,
           totalAmount,
           paymentMethod,
           type: "OFFLINE",

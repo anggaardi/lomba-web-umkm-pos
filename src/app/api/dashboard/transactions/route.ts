@@ -56,6 +56,7 @@ export async function GET(req: Request) {
         skip: offset,
         select: {
           id: true,
+          transactionNumber: true,
           createdAt: true,
           status: true,
           paymentMethod: true,
@@ -69,6 +70,7 @@ export async function GET(req: Request) {
 
     const serialized = transactions.map((tx) => ({
       id: tx.id,
+      transactionNumber: tx.transactionNumber,
       createdAt: tx.createdAt.toISOString(),
       status: tx.status,
       paymentMethod: tx.paymentMethod,

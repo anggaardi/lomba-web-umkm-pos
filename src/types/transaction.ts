@@ -17,6 +17,7 @@ export type TransactionItem = {
 /** Data ringkas untuk satu baris di tabel riwayat transaksi. */
 export type TransactionSummary = {
   id: string;
+  transactionNumber?: string | null;
   createdAt: string; // ISO string
   status: TransactionStatus;
   paymentMethod: string;
