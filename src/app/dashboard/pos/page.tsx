@@ -78,20 +78,7 @@ export default async function PosPage() {
     })),
   }));
 
-  // Tambahkan duplikasi produk agar lebih banyak untuk tes scrolling & sticky
-  if (mappedProducts.length > 0 && mappedProducts.length < 20) {
-    const dummyCopies: typeof mappedProducts = [];
-    for (let i = 1; i <= 6; i++) {
-      mappedProducts.forEach(p => {
-        dummyCopies.push({
-          ...p,
-          id: `${p.id}-dummy-${i}`,
-          name: `${p.name} (Copy ${i})`
-        });
-      });
-    }
-    mappedProducts = [...mappedProducts, ...dummyCopies];
-  }
+
 
   const mappedCategories = categories.map((c) => ({
     id: c.id,

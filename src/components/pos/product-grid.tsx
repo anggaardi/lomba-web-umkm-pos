@@ -1,10 +1,8 @@
-import { useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import type { PosProduct } from "@/types/pos";
 
 const COLUMN_COUNT = 5;
-const ITEM_HEIGHT = 200;
-
+const ITEM_HEIGHT = 220;
 export function ProductGrid({
   products,
   productAvailability,
@@ -14,13 +12,10 @@ export function ProductGrid({
   productAvailability: Map<string, number>;
   onAddToCart: (product: PosProduct) => void;
 }) {
-  const parentRef = useRef<HTMLDivElement>(null);
-
-  const rowVirtualizer = useVirtualizer({
+  const rowVirtualizer = useWindowVirtualizer({
     count: Math.ceil(products.length / COLUMN_COUNT),
-    getScrollElement: () => parentRef.current,
     estimateSize: () => ITEM_HEIGHT,
-    overscan: 2,
+    overscan: 5,
   });
 
   if (products.length === 0) {
@@ -34,10 +29,7 @@ export function ProductGrid({
   }
 
   return (
-    <div
-      ref={parentRef}
-      className="h-[600px] overflow-auto scrollbar-thin scrollbar-thumb-gray-200"
-    >
+    <div className="w-full">
       <div
         style={{
           height: `${rowVirtualizer.getTotalSize()}px`,
@@ -64,7 +56,7 @@ export function ProductGrid({
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-4">
                 {rowProducts.map((product) => {
                   const availablePortions =
                     productAvailability.get(product.id) || 0;

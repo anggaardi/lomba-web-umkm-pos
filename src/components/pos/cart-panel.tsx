@@ -29,7 +29,7 @@ export function CartPanel({
   onCheckout: () => void;
 }) {
   return (
-    <div className="bg-white rounded-[1.5rem] shadow-lg overflow-hidden flex flex-col flex-1 border border-gray-50 min-h-0 relative">
+    <div className="bg-white rounded-[1.5rem] shadow-lg overflow-hidden flex flex-col border border-gray-50 h-full">
       {/* Header */}
       <div className="p-5 pb-3 flex items-center justify-between shrink-0 border-b border-gray-50">
         <div className="flex items-center gap-3">
@@ -43,8 +43,8 @@ export function CartPanel({
         </div>
       </div>
 
-      {/* Cart Items */}
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 scrollbar-thin scrollbar-thumb-gray-100 hover:scrollbar-thumb-gray-200">
+      {/* Cart Items - Scrollable Area */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5 scrollbar-thin scrollbar-thumb-gray-200 hover:scrollbar-thumb-gray-300 min-h-0">
         {cart.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40">
             <ShoppingBag className="h-10 w-10 mb-2 text-gray-200" />

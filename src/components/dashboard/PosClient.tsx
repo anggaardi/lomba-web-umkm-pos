@@ -22,7 +22,7 @@ export function PosClient({
   tenant,
 }: PosClientProps) {
   const state = usePosState(defaultBranchId, posConfig);
-  const { productAvailability } = useProductAvailability(
+  const { productAvailability, virtualIngredientStock } = useProductAvailability(
     initialProducts,
     ingredients,
     state.cart
@@ -77,6 +77,36 @@ export function PosClient({
         item.product.id === productId ? { ...item, quantity } : item
       )
     );
+  };
+
+  const checkInsufficientStock = () => {
+    const insufficientItems: Array<{
+      productName: string;
+      ingredientName: string;
+      available: number;
+      required: number;
+    }> = [];
+
+    state.cart.forEach((cartItem) => {
+      cartItem.product.recipes.forEach((recipe) => {
+        const ingredient = ingredients.find((ing) => ing.id === recipe.ingredientId);
+        if (!ingredient) return;
+
+        const virtualStock = virtualIngredientStock.get(recipe.ingredientId) || 0;
+        const requiredForThisItem = recipe.quantity * cartItem.quantity;
+
+        if (virtualStock < 0) {
+          insufficientItems.push({
+            productName: cartItem.product.name,
+            ingredientName: ingredient.name,
+            available: ingredient.stock,
+            required: requiredForThisItem,
+          });
+        }
+      });
+    });
+
+    return insufficientItems;
   };
 
   const handleSubmit = async () => {
@@ -150,6 +180,17 @@ export function PosClient({
       state.setError("Keranjang belanja masih kosong.");
       return;
     }
+
+    // Check for insufficient stock before submitting
+    const insufficientItems = checkInsufficientStock();
+    if (insufficientItems.length > 0) {
+      const firstItem = insufficientItems[0];
+      state.setError(
+        `Stok tidak mencukupi untuk "${firstItem.ingredientName}". Tersedia: ${firstItem.available}, dibutuhkan: ${firstItem.required}.`
+      );
+      return;
+    }
+
     if (
       state.paymentMethod === "CASH" &&
       state.amountReceived < totalAmount
@@ -167,12 +208,23 @@ export function PosClient({
       state.setError("Keranjang belanja masih kosong.");
       return;
     }
+
+    // Check for insufficient stock
+    const insufficientItems = checkInsufficientStock();
+    if (insufficientItems.length > 0) {
+      const firstItem = insufficientItems[0];
+      state.setError(
+        `Stok tidak mencukupi untuk "${firstItem.ingredientName}". Tersedia: ${firstItem.available}, dibutuhkan: ${firstItem.required}.`
+      );
+      return;
+    }
+
     state.setShowPaymentModal(true);
     state.setError(null);
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 relative font-sans lg:h-[calc(100vh-120px)] lg:overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 relative font-sans pb-24 lg:pb-6">
       <PaymentModal
         isOpen={state.showPaymentModal}
         onClose={() => state.setShowPaymentModal(false)}
@@ -194,7 +246,7 @@ export function PosClient({
       />
 
       {/* Main Content */}
-      <div className="lg:col-span-3 space-y-6 lg:overflow-y-auto lg:pr-4 lg:pb-10 scrollbar-thin scrollbar-thumb-gray-200">
+      <div className="lg:col-span-3 space-y-6">
         {/* Banner */}
         <div className="relative h-48 md:h-60 w-full overflow-hidden rounded-[2rem] shadow-lg group">
           <img
@@ -228,8 +280,8 @@ export function PosClient({
         </div>
       </div>
 
-      {/* Right Sidebar */}
-      <div className="lg:col-span-1 flex flex-col h-full lg:min-h-0 gap-4 lg:pb-4">
+      {/* Right Sidebar - Sticky */}
+      <div className="hidden lg:flex lg:col-span-1 flex-col gap-4 sticky top-6 self-start h-[calc(100vh-120px)]">
         <NewOrderPanel
           isCollapsed={state.isNewOrderPanelCollapsed}
           onToggleCollapse={() =>
@@ -243,20 +295,22 @@ export function PosClient({
           onOrderTypeChange={state.setOrderType}
         />
 
-        <CartPanel
-          cart={state.cart}
-          onUpdateQuantity={updateQuantity}
-          subtotal={subtotal}
-          taxAmount={taxAmount}
-          serviceAmount={serviceAmount}
-          totalAmount={totalAmount}
-          applyTax={state.applyTax}
-          applyService={state.applyService}
-          posConfig={posConfig}
-          error={state.error}
-          isSubmitting={state.isSubmitting}
-          onCheckout={handleCheckout}
-        />
+        <div className="flex-1 min-h-0">
+          <CartPanel
+            cart={state.cart}
+            onUpdateQuantity={updateQuantity}
+            subtotal={subtotal}
+            taxAmount={taxAmount}
+            serviceAmount={serviceAmount}
+            totalAmount={totalAmount}
+            applyTax={state.applyTax}
+            applyService={state.applyService}
+            posConfig={posConfig}
+            error={state.error}
+            isSubmitting={state.isSubmitting}
+            onCheckout={handleCheckout}
+          />
+        </div>
       </div>
 
       <MobileBottomBar
