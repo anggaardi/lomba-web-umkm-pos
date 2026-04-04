@@ -77,9 +77,13 @@ export function PaymentModal({
                 <span className="text-gray-400 font-bold text-sm">Rp</span>
               </div>
               <input
-                type="number"
-                value={amountReceived || ""}
-                onChange={(e) => onAmountReceivedChange(Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={amountReceived ? amountReceived.toLocaleString('id-ID') : ""}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/\D/g, "");
+                  onAmountReceivedChange(val ? Number(val) : 0);
+                }}
                 placeholder="Masukan Nominal..."
                 className="w-full bg-gray-50 border-2 border-gray-100 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-gray-700 placeholder:text-gray-300 focus:ring-2 focus:ring-orange-100 focus:border-orange-200 transition-all"
               />

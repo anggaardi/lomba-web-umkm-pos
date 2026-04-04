@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useCallback } from "react";
 import type { PosClientProps, PosProduct } from "@/types/pos";
 import { usePosState, useProductAvailability, useCartTotals } from "@/hooks";
 import {
@@ -12,6 +12,7 @@ import {
   ReceiptModal,
   MobileBottomBar,
 } from "@/components/pos";
+import { useMobileSearch } from "@/hooks/useMobileSearch";
 
 export function PosClient({
   initialProducts,
@@ -22,6 +23,9 @@ export function PosClient({
   tenant,
 }: PosClientProps) {
   const state = usePosState(defaultBranchId, posConfig);
+  const { setSearchTerm } = state;
+  
+  useMobileSearch(useCallback((q: string) => setSearchTerm(q), [setSearchTerm]));
   const { productAvailability, virtualIngredientStock } = useProductAvailability(
     initialProducts,
     ingredients,

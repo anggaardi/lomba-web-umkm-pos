@@ -11,6 +11,7 @@ import type {
   TransactionDetail,
   PaginationMeta,
 } from "@/types/transaction";
+import { useMobileSearch } from "@/hooks/useMobileSearch";
 
 // --- Helpers ---
 
@@ -73,7 +74,8 @@ export default function TransactionsClient({ initialTransactions, initialPaginat
   const [statusFilter, setStatusFilter] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  
+
+
   // Custom DatePicker UI state
   const [showCalendar, setShowCalendar] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -104,6 +106,12 @@ export default function TransactionsClient({ initialTransactions, initialPaginat
     },
     [search, statusFilter, startDate, endDate]
   );
+
+  // Connect to global search
+  useMobileSearch(useCallback((q: string) => {
+    setSearch(q);
+    fetchTransactions({ page: 1, status: statusFilter, search: q });
+  }, [fetchTransactions, statusFilter]));
 
   const fetchDetail = useCallback((txId: string) => {
     setSelectedTxId(txId);
@@ -327,13 +335,17 @@ export default function TransactionsClient({ initialTransactions, initialPaginat
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
           </div>
 
-          {/* Search */}
-          <div className="relative w-full flex-1">
+          {/* Search (Desktop Hidden, mobile only or removed if redundant) */}
+          <div className="relative w-full flex-1 lg:hidden">
             <input
               type="text"
               placeholder="Cari ID Nota..."
               value={search}
-              onChange={(e) => { setSearch(e.target.value); handleFilter(statusFilter, e.target.value); }}
+              onChange={(e) => { 
+                const q = e.target.value;
+                setSearch(q); 
+                handleFilter(statusFilter, q); 
+              }}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50/50 border border-gray-100 rounded-xl text-xs font-bold text-gray-400 outline-none focus:ring-2 focus:ring-primary/20"
             />
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />

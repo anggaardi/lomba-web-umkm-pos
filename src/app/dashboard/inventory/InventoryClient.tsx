@@ -352,18 +352,6 @@ export default function InventoryClient({
             ))}
           </div>
 
-          <div className="hidden lg:flex items-center justify-between">
-            <div className="relative flex-1 max-w-md">
-              <input
-                type="text"
-                placeholder="Cari bahan baku..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-11 pr-4 py-2.5 w-full bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              />
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            </div>
-          </div>
         </div>
 
         {/* List Views */}

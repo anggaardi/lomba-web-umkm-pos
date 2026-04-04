@@ -52,6 +52,7 @@ export function RestockModal({
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-2.5 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all active:scale-90"
           >
@@ -78,7 +79,7 @@ export function RestockModal({
               <label className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
                 Pilih Kemasan Pembelian
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 max-h-[200px] overflow-y-auto pr-2 pb-2">
                 {selectedIngredient.packagings?.map((pkg) => (
                   <button
                     key={pkg.id}

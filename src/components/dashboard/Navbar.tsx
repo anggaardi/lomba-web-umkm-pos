@@ -7,9 +7,12 @@ import {
   ExternalLink,
   Building2,
   ChevronDown,
+  Search,
+  X,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
+import { useMobileHeader } from "@/context/MobileHeaderContext";
 
 import { Session } from "next-auth";
 
@@ -22,6 +25,7 @@ export function Navbar({
   const session = initialSession || clientSession;
   const pathname = usePathname();
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
+  const { onSearchChange, searchQuery } = useMobileHeader();
 
   if (isSuperAdmin) {
     // Generate breadcrumbs for Super Admin
@@ -62,6 +66,27 @@ export function Navbar({
               )}
             </span>
           ))}
+        </div>
+
+        <div className="flex-1 max-w-md mx-8">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <input
+              type="text"
+              placeholder="Cari sesuatu..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => onSearchChange("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -131,6 +156,27 @@ export function Navbar({
             )}
           </span>
         ))}
+      </div>
+
+      <div className="flex-1 max-w-md mx-8">
+        <div className="relative group">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <input
+            type="text"
+            placeholder="Cari sesuatu..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/10 focus:border-primary transition-all font-medium"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => onSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex items-center space-x-6">
