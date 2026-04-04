@@ -55,11 +55,13 @@ export function CategoryManagementModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-4xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="bg-primary p-8 flex items-center justify-between text-white">
+      <div className="bg-white rounded-[32px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] w-full max-w-[600px] max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div className="px-8 pt-8 pb-6 flex items-start justify-between bg-white border-b border-slate-50 relative z-10">
           <div>
-            <h2 className="text-xl font-bold">Manage Categories</h2>
-            <p className="text-primary-light/80 text-xs font-bold mt-1 uppercase tracking-widest">
+            <h2 className="text-[28px] font-black text-slate-900 leading-tight">
+              Manage Categories
+            </h2>
+            <p className="text-slate-400 text-[13px] font-bold mt-1 uppercase tracking-wide">
               Add, Edit or Delete Product Categories
             </p>
           </div>
@@ -68,7 +70,7 @@ export function CategoryManagementModal({
               onClose();
               resetForm();
             }}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2.5 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all active:scale-90"
           >
             <X className="w-6 h-6" />
           </button>

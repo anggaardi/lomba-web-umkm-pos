@@ -8,9 +8,10 @@ interface DesktopRecipeCardProps {
   product: Product;
   ingredients: Ingredient[];
   router: any;
+  onDelete: (id: string) => void;
 }
 
-export function DesktopRecipeCard({ product, ingredients, router }: DesktopRecipeCardProps) {
+export function DesktopRecipeCard({ product, ingredients, router, onDelete }: DesktopRecipeCardProps) {
   let hpp = 0;
   let isComplete = product.recipes.length > 0;
   let outOfStockCount = 0;
@@ -101,7 +102,12 @@ export function DesktopRecipeCard({ product, ingredients, router }: DesktopRecip
             >
               Edit
             </button>
-            <button onClick={(e) => { e.stopPropagation(); }} className="px-4 py-2 border border-red-200 bg-red-50 text-red-600 rounded-lg text-xs font-bold opacity-50 cursor-not-allowed">Hapus</button>
+            <button 
+              onClick={(e) => { e.stopPropagation(); onDelete(product.id); }} 
+              className="px-4 py-2 border border-red-200 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors"
+            >
+              Hapus
+            </button>
           </div>
         </div>
       </div>

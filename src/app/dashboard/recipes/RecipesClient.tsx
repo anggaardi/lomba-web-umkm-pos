@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMobileSearch } from "@/hooks/useMobileSearch";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { type Product, type Ingredient } from "./types";
 import { RecipeStatCard } from "./_components/RecipeStatCard";
 import { MobileRecipeCard } from "./_components/MobileRecipeCard";
@@ -25,13 +27,35 @@ export default function RecipesClient({
   initialProducts,
   initialIngredients,
 }: RecipesClientProps) {
-  const [products] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [ingredients] = useState<Ingredient[]>(initialIngredients);
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
 
   // Connect to mobile header search
   useMobileSearch(useCallback((q) => setSearchQuery(q), []));
+
+  const initiateDelete = useCallback((id: string) => {
+    setDeleteId(id);
+  }, []);
+
+  const confirmDelete = useCallback(async () => {
+    if (!deleteId) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch(`/api/inventory/recipes/${deleteId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Gagal menghapus resep");
+      setProducts((prev) => prev.filter((p) => p.id !== deleteId));
+      toast.success("Resep berhasil dihapus");
+      setDeleteId(null);
+    } catch (err: any) {
+      toast.error(err.message || "Terjadi kesalahan saat menghapus resep");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [deleteId]);
 
   const filteredProducts = useMemo(() => {
     return products.filter(p => 
@@ -63,6 +87,7 @@ export default function RecipesClient({
 
   return (
     <div className="space-y-6 pb-24 lg:pb-10">
+      <ToastContainer />
       {/* Mobile-only header and search are now handled by MobileHeader component */}
 
       {/* --- DESKTOP HEADER (Desktop Only) --- */}
@@ -137,7 +162,8 @@ export default function RecipesClient({
                 key={p.id} 
                 product={p} 
                 ingredients={ingredients} 
-                router={router} 
+                router={router}
+                onDelete={initiateDelete}
               />
             ))}
           </div>
@@ -149,7 +175,8 @@ export default function RecipesClient({
                 key={p.id} 
                 product={p} 
                 ingredients={ingredients} 
-                router={router} 
+                router={router}
+                onDelete={initiateDelete}
               />
             ))}
           </div>
@@ -163,6 +190,41 @@ export default function RecipesClient({
       >
         <Plus className="w-8 h-8 font-black" />
       </Link>
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl flex flex-col items-center text-center animate-in zoom-in-95 duration-200">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-2">Hapus Resep?</h3>
+            <p className="text-sm text-slate-500 mb-6 px-2">
+              Tindakan ini tidak bisa dibatalkan, namun histori transaksi terkait resep ini akan tetap aman.
+            </p>
+            <div className="flex gap-3 w-full">
+              <button
+                onClick={() => setDeleteId(null)}
+                disabled={isDeleting}
+                className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-sm font-bold transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-red-500/20 transition-all active:scale-95 disabled:opacity-70 flex items-center justify-center"
+              >
+                {isDeleting ? (
+                  <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Ya, Hapus"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

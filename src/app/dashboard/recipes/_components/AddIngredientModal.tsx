@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { X, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { type Ingredient } from "../types";
+import { type Ingredient, type Category } from "../types";
 
 interface AddIngredientModalProps {
   isOpen: boolean;
   onClose: () => void;
   ingredients: Ingredient[];
+  categories: Category[];
   searchQuery: string;
   setSearchQuery: (q: string) => void;
   selectedIds: string[];
@@ -19,6 +20,7 @@ export function AddIngredientModal({
   isOpen,
   onClose,
   ingredients,
+  categories,
   searchQuery,
   setSearchQuery,
   selectedIds,
@@ -26,11 +28,14 @@ export function AddIngredientModal({
   onClearSelection,
   onAddSelected,
 }: AddIngredientModalProps) {
+  const [activeCategory, setActiveCategory] = useState<string>("all");
+
   if (!isOpen) return null;
 
-  const filteredIngredients = !searchQuery
-    ? ingredients
-    : ingredients.filter((ing) => ing.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredIngredients = ingredients.filter((ing) => {
+    const matchesSearch = !searchQuery || ing.name.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
+  });
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/20 backdrop-blur-sm animate-in fade-in duration-200">
@@ -61,18 +66,31 @@ export function AddIngredientModal({
           </div>
 
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            <button className="px-4 py-1.5 bg-primary text-white text-xs font-bold rounded-full whitespace-nowrap">
+            <button
+              onClick={() => setActiveCategory("all")}
+              className={cn(
+                "px-4 py-1.5 text-xs font-bold rounded-full whitespace-nowrap transition-colors",
+                activeCategory === "all"
+                  ? "bg-primary text-white"
+                  : "bg-slate-50 hover:bg-slate-100 text-slate-600"
+              )}
+            >
               All Items
             </button>
-            <button className="px-4 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-full whitespace-nowrap transition-colors">
-              Coffee Beans
-            </button>
-            <button className="px-4 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-full whitespace-nowrap transition-colors">
-              Dairy & Alternatives
-            </button>
-            <button className="px-4 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-full whitespace-nowrap transition-colors">
-              Sweeteners
-            </button>
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveCategory(cat.id)}
+                className={cn(
+                  "px-4 py-1.5 text-xs font-bold rounded-full whitespace-nowrap transition-colors",
+                  activeCategory === cat.id
+                    ? "bg-primary text-white"
+                    : "bg-slate-50 hover:bg-slate-100 text-slate-600"
+                )}
+              >
+                {cat.name}
+              </button>
+            ))}
           </div>
         </div>
 

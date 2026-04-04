@@ -40,10 +40,67 @@ function formatCompact(n: number): string {
 }
 
 
-async function getDashboardData(tenantId: string) {
+function getFilterChartDays(filter: string) {
+  const WIB_OFFSET_MS = 7 * 60 * 60 * 1000;
+  const nowWibMs = Date.now() + WIB_OFFSET_MS;
+  const wibDate = new Date(nowWibMs);
+  const year = wibDate.getUTCFullYear();
+  const month = wibDate.getUTCMonth();
+  const date = wibDate.getUTCDate();
+  
+  if (filter === "year") {
+    const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+    return months.map((label, index) => ({
+      start: new Date(Date.UTC(year, index, 1, 0, 0, 0, 0) - WIB_OFFSET_MS),
+      end: new Date(Date.UTC(year, index + 1, 0, 23, 59, 59, 999) - WIB_OFFSET_MS),
+      label,
+    }));
+  }
+  
+  if (filter === "month") {
+    // 4 weeks of the current month
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    const weeks = [];
+    for (let i = 0; i < 4; i++) {
+      const startDay = i * 7 + 1;
+      const endDay = i === 3 ? daysInMonth : (i + 1) * 7;
+      weeks.push({
+        start: new Date(Date.UTC(year, month, startDay, 0, 0, 0, 0) - WIB_OFFSET_MS),
+        end: new Date(Date.UTC(year, month, endDay, 23, 59, 59, 999) - WIB_OFFSET_MS),
+        label: `Mg ${i + 1}`,
+      });
+    }
+    return weeks;
+  }
+  
+  if (filter === "today") {
+    // blocks of 4 hours
+    const blocks = [
+      { startH: 0, endH: 3, label: "00-04" },
+      { startH: 4, endH: 7, label: "04-08" },
+      { startH: 8, endH: 11, label: "08-12" },
+      { startH: 12, endH: 15, label: "12-16" },
+      { startH: 16, endH: 19, label: "16-20" },
+      { startH: 20, endH: 23, label: "20-24" },
+    ];
+    return blocks.map(b => ({
+      start: new Date(Date.UTC(year, month, date, b.startH, 0, 0, 0) - WIB_OFFSET_MS),
+      end: new Date(Date.UTC(year, month, date, b.endH, 59, 59, 999) - WIB_OFFSET_MS),
+      label: b.label
+    }));
+  }
+  
+  // default: 7days
+  return Array.from({ length: 7 }, (_, i) => {
+    const range = getWIBDayRange(6 - i);
+    return { ...range, label: DAY_LABELS[range.start.getDay()] };
+  });
+}
+
+async function getDashboardData(tenantId: string, filter: string = "7days") {
   const today = getWIBDayRange(0);
   const yesterday = getWIBDayRange(1);
-  const chartDays = Array.from({ length: 7 }, (_, i) => getWIBDayRange(6 - i));
+  const chartDays = getFilterChartDays(filter);
 
   const [
     salesToday,
@@ -63,7 +120,7 @@ async function getDashboardData(tenantId: string) {
       },
       _sum: { totalAmount: true },
     }),
-    prisma.transaction.aggregate({
+    prisma.transaction.aggregate({  
       where: {
         tenantId,
         status: "COMPLETED",
@@ -89,7 +146,7 @@ async function getDashboardData(tenantId: string) {
       where: {
         tenantId,
         status: "COMPLETED",
-        createdAt: { gte: chartDays[0].start, lte: chartDays[6].end },
+        createdAt: { gte: chartDays[0].start, lte: chartDays[chartDays.length - 1].end },
       },
       select: { createdAt: true, totalAmount: true },
     }),
@@ -128,7 +185,6 @@ async function getDashboardData(tenantId: string) {
   ]);
 
   // ── Stats ─────────────────────────────────────────────────────────────────
-  // Trap #1: Prisma.Decimal → number
   const totalSalesToday = salesToday._sum.totalAmount?.toNumber() ?? 0;
   const totalSalesYesterday = salesYesterday._sum.totalAmount?.toNumber() ?? 0;
   const avgOrderValue =
@@ -178,7 +234,7 @@ async function getDashboardData(tenantId: string) {
       .reduce((sum, tx) => sum + tx.totalAmount.toNumber(), 0); // Decimal → number
 
     return {
-      label: DAY_LABELS[dayRange.start.getDay()],
+      label: (dayRange as any).label || DAY_LABELS[dayRange.start.getDay()],
       total: dayTotal,
       totalMillions: parseFloat((dayTotal / 1_000_000).toFixed(2)),
     };
@@ -236,17 +292,25 @@ async function getDashboardData(tenantId: string) {
 }
 
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams?: Promise<{ filter?: string }>;
+}
+
+export default async function DashboardPage(props: DashboardPageProps) {
   const session = await getServerSession(authOptions);
   const tenantId = (session?.user as any)?.tenantId as string | undefined;
   const tenantSlug = (session?.user as any)?.tenantSlug as string | undefined;
   const userName = session?.user?.name ?? null;
+
+  const resolvedSearchParams = props.searchParams ? await props.searchParams : {};
+  const filter = resolvedSearchParams.filter || "7days";
 
   if (!tenantId) {
     return (
       <DashboardClient
         tenantSlug={tenantSlug ?? null}
         userName={userName}
+        filter={filter}
         stats={{
           totalSalesToday: 0,
           totalSalesTodayFormatted: "Rp 0",
@@ -266,12 +330,13 @@ export default async function DashboardPage() {
   }
 
   const { stats, chartData, topProducts, recentTransactions, lowStockItems } =
-    await getDashboardData(tenantId);
+    await getDashboardData(tenantId, filter);
 
   return (
     <DashboardClient
       tenantSlug={tenantSlug ?? null}
       userName={userName}
+      filter={filter}
       stats={stats}
       chartData={chartData}
       topProducts={topProducts}

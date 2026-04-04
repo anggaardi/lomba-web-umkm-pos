@@ -22,7 +22,8 @@ interface Tenant {
 export default function MarketplaceUI({ tenant, initialProducts }: { tenant: Tenant, initialProducts: Product[] }) {
   const [cart, setCart] = useState<{ product: Product; quantity: number }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [customerName, setCustomerName] = useState("");
+  const [customerName, setCustomerName] = useState("Tamu Meja 12");
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
   const addToCart = (product: Product) => {
     setCart((prev) => {
@@ -36,8 +37,26 @@ export default function MarketplaceUI({ tenant, initialProducts }: { tenant: Ten
     });
   };
 
-  const totalAmount = cart.reduce((sum, item) => sum + (Number(item.product.price) * item.quantity), 0);
+  const updateQuantity = (productId: string, delta: number) => {
+    setCart((prev) => {
+      return prev.map(item => {
+        if (item.product.id === productId) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : item;
+        }
+        return item;
+      });
+    });
+  };
 
+  const removeFromCart = (productId: string) => {
+    setCart((prev) => prev.filter(item => item.product.id !== productId));
+  };
+
+  const subtotalAmount = cart.reduce((sum, item) => sum + (Number(item.product.price) * item.quantity), 0);
+  const serviceAmount = Math.round(subtotalAmount * 0.05);
+  const taxAmount = Math.round(subtotalAmount * 0.11);
+  const totalAmount = subtotalAmount + serviceAmount + taxAmount;
   const handleCheckout = async () => {
     if (cart.length === 0) return;
     if (!customerName) {
@@ -100,14 +119,14 @@ export default function MarketplaceUI({ tenant, initialProducts }: { tenant: Ten
             </div>
             <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">{tenant.name}</h1>
           </div>
-          <div className="relative p-2 bg-gray-100 rounded-full">
+          <button onClick={() => setIsCartOpen(true)} className="relative p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors">
             <ShoppingCart className="h-6 w-6 text-gray-600" />
             {cart.length > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-5 w-5 rounded-full flex items-center justify-center animate-pulse">
                 {cart.reduce((s, i) => s + i.quantity, 0)}
               </span>
             )}
-          </div>
+          </button>
         </div>
       </header>
 
@@ -163,40 +182,152 @@ export default function MarketplaceUI({ tenant, initialProducts }: { tenant: Ten
         )}
       </main>
 
-      {/* Sticky Bottom Bar for Checkout */}
-      {cart.length > 0 && (
-        <div className="fixed bottom-0 inset-x-0 bg-white/80 backdrop-blur-md border-t p-4 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-          <div className="max-w-3xl mx-auto space-y-4">
-            <div className="flex items-center space-x-4">
-              <input
-                type="text"
-                placeholder="Masukkan Nama Anda..."
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium"
-              />
+      {/* Cart Full View */}
+      {isCartOpen && (
+        <div className="fixed inset-0 bg-[#F9F9F9] z-50 overflow-y-auto">
+          {/* Top Bar for Cart */}
+          <div className="px-6 pt-8 pb-4 flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-[#9A3412] font-semibold">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 10 0 4m0-4a2 2 0 11 0 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              <span>Meja 12</span>
             </div>
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">Total Pesanan</p>
-                <p className="text-2xl font-black text-gray-900 tracking-tight">Rp {totalAmount.toLocaleString()}</p>
-              </div>
-              <button 
-                onClick={handleCheckout}
-                disabled={isLoading}
-                className="flex-1 bg-green-600 text-white font-black py-4 px-8 rounded-2xl flex items-center justify-center shadow-lg hover:bg-green-700 active:scale-95 transition-all disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <Loader2 className="animate-spin h-6 w-6 mr-2" />
-                ) : (
-                  <svg className="h-6 w-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.588-5.946 0-6.556 5.332-11.888 11.888-11.888 3.176 0 6.161 1.237 8.404 3.48s3.481 5.229 3.481 8.404c0 6.556-5.332 11.888-11.888 11.888-2.01 0-3.986-.51-5.731-1.472l-6.253 1.641zm6.052-4.144c1.657.983 3.324 1.477 5.093 1.477 5.409 0 9.811-4.402 9.811-9.811 0-5.409-4.402-9.811-9.811-9.811-2.617 0-5.078 1.019-6.929 2.871s-2.871 4.312-2.871 6.929c0 1.834.536 3.633 1.55 5.215l-1.012 3.693 3.791-.994z"/>
-                  </svg>
-                )}
-                {isLoading ? "Memproses..." : "Pesan via WhatsApp"}
+            <div className="flex items-center space-x-4 text-gray-500">
+              <button onClick={() => setIsCartOpen(false)} className="hover:text-gray-900">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
           </div>
+
+          <div className="px-6 pb-32 max-w-lg mx-auto">
+            <h2 className="text-[32px] font-bold text-gray-900 tracking-tight mb-1">Pesanan Anda</h2>
+            <p className="text-gray-600 mb-8">{tenant.name} — <span className="text-[#C2410B] font-semibold">Meja 12</span></p>
+
+            {cart.length === 0 ? (
+              <div className="text-center py-10 bg-white rounded-2xl">
+                <p className="text-gray-500">Keranjang masih kosong</p>
+                <button onClick={() => setIsCartOpen(false)} className="mt-4 text-[#C2410B] font-semibold">
+                  Kembali ke Menu
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {cart.map((item) => (
+                  <div key={item.product.id} className="flex gap-4 border-b border-gray-100 pb-6">
+                    <div className="w-24 h-24 bg-gray-200 rounded-2xl overflow-hidden shrink-0 relative">
+                      {item.product.image ? (
+                        <img src={item.product.image} alt={item.product.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-400">
+                          <Store className="w-8 h-8 opacity-50" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="flex justify-between items-start mb-1 gap-2">
+                          <h3 className="font-bold text-gray-900 text-lg leading-tight">{item.product.name}</h3>
+                          <span className="font-bold text-gray-900 whitespace-nowrap">Rp {Number(item.product.price).toLocaleString('id-ID')}</span>
+                        </div>
+                        <p className="text-sm text-gray-500 line-clamp-2 leading-snug">{item.product.description || "Menu pilihan terbaik dari kedai kami."}</p>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 mt-3">
+                        <div className="flex items-center bg-[#F3F3F3] rounded-full px-1">
+                          <button 
+                            onClick={() => updateQuantity(item.product.id, -1)}
+                            className="w-8 h-8 flex items-center justify-center text-[#C2410B] text-xl pb-0.5"
+                          >
+                            -
+                          </button>
+                          <span className="w-8 text-center font-semibold text-gray-900">{item.quantity}</span>
+                          <button 
+                            onClick={() => updateQuantity(item.product.id, 1)}
+                            className="w-8 h-8 flex items-center justify-center text-[#C2410B] text-xl pb-0.5"
+                          >
+                            +
+                          </button>
+                        </div>
+                        <button 
+                          onClick={() => removeFromCart(item.product.id)}
+                          className="flex items-center text-red-500 text-sm font-semibold tracking-wide"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          HAPUS
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {/* Summary Card */}
+                <div className="bg-[#F6F6F6] rounded-[24px] p-6 mt-8">
+                  <h3 className="font-bold text-lg text-gray-900 mb-4">Ringkasan Pesanan</h3>
+                  
+                  <div className="space-y-3 mb-6">
+                    <div className="flex justify-between text-gray-600">
+                      <span>Subtotal</span>
+                      <span className="font-semibold text-gray-900">Rp {subtotalAmount.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Service (5%)</span>
+                      <span className="font-semibold text-gray-900">Rp {serviceAmount.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>PPN (11%)</span>
+                      <span className="font-semibold text-gray-900">Rp {taxAmount.toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 pt-4 mb-6">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-gray-900 text-lg">Total<br/>Pembayaran</span>
+                      <span className="font-extrabold text-[#C2410B] text-2xl">Rp {totalAmount.toLocaleString('id-ID')}</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-[#F0EEEB] rounded-xl p-4 flex gap-3 text-[#7B6149]">
+                    <div className="w-5 h-5 rounded-full bg-[#C2410B] text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="italic font-serif text-sm font-bold">i</span>
+                    </div>
+                    <p className="text-[11px] font-bold tracking-wider leading-relaxed">
+                      PESANAN AKAN LANGSUNG TERHUBUNG KE POS SISTEM KASIR MEJA 12
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Action */}
+          {cart.length > 0 && (
+            <div className="fixed bottom-0 left-0 right-0 p-6 bg-linear-to-t from-white via-white to-transparent">
+              <div className="max-w-lg mx-auto bg-white p-2 rounded-[32px] shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+                <button 
+                  onClick={handleCheckout}
+                  disabled={isLoading}
+                  className="w-full bg-[#C2410B] text-white font-bold text-lg py-5 rounded-[24px] flex items-center justify-center hover:bg-[#A33609] active:scale-[0.98] transition-all"
+                >
+                  {isLoading ? (
+                    <Loader2 className="animate-spin h-6 w-6" />
+                  ) : (
+                    <>
+                      Lanjut ke Pembayaran
+                      <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

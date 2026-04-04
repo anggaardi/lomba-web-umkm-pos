@@ -15,10 +15,11 @@ export default async function RecipesPage() {
   try {
     const { tenant } = await requireTenant();
 
-    // Fetch Products with Recipes
+    // Fetch Products with Recipes — only show available (not soft-deleted) products
     const products = await prisma.product.findMany({
       where: {
         tenantId: tenant.id,
+        isAvailable: true,
       },
       include: {
         recipes: {

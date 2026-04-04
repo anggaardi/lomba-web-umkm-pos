@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { X, CheckCircle2, Loader2, Trash2 } from "lucide-react";
+import { X, CheckCircle2, Loader2, Trash2, ChevronsUpDown } from "lucide-react";
 import { type Ingredient } from "../types";
 
 interface EditIngredientModalProps {
@@ -43,18 +43,26 @@ export function EditIngredientModal({
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="bg-primary p-6 flex items-center justify-between text-white">
-          <h2 className="text-xl font-black">Edit Bahan Baku</h2>
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 transition-all duration-300">
+      <div className="bg-white rounded-[32px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] w-full max-w-[500px] overflow-hidden animate-in fade-in zoom-in duration-300">
+        <div className="px-8 pt-8 pb-6 flex items-start justify-between bg-white border-b border-slate-50 relative z-10">
+          <div>
+            <h2 className="text-[28px] font-black text-slate-900 leading-tight">
+              Edit Bahan Baku
+            </h2>
+            <p className="text-slate-400 text-[13px] font-bold mt-1 uppercase tracking-wide">
+              Perbarui informasi bahan baku
+            </p>
+          </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 hover:bg-white/20 rounded-full transition-colors"
+            className="p-2.5 bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all active:scale-90"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
-        <form className="p-6 space-y-4" onSubmit={handleSubmit}>
+        <form className="px-8 pb-8 pt-4 space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-1.5">
             <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">
               Nama Bahan
@@ -63,7 +71,7 @@ export function EditIngredientModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full bg-slate-50 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 border"
+              className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -75,20 +83,25 @@ export function EditIngredientModal({
                 value={formData.unit}
                 onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                 required
-                className="w-full bg-slate-50 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20 border"
+                className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-sm font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-[11px] font-black text-slate-600 uppercase tracking-widest ml-1">
                 Min Stok
               </label>
-              <input
-                type="number"
-                value={formData.minStock}
-                min="0"
-                onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) || 0 })}
-                className="w-full bg-slate-50 border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-primary/20 border"
-              />
+              <div className="relative">
+                <input
+                  type="number"
+                  value={formData.minStock}
+                  min="0"
+                  onChange={(e) => setFormData({ ...formData, minStock: Number(e.target.value) || 0 })}
+                  className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-12 py-3.5 text-sm font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center justify-center bg-slate-100 rounded text-slate-400 p-0.5 pointer-events-none">
+                  <ChevronsUpDown className="w-[14px] h-[14px]" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -96,7 +109,7 @@ export function EditIngredientModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-4 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 bg-primary hover:bg-primary-dark text-white rounded-2xl font-black text-[12px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -114,7 +127,7 @@ export function EditIngredientModal({
                 }
               }}
               disabled={isSubmitting}
-              className="w-full py-4 border border-red-200 text-red-500 hover:bg-red-50 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+              className="w-full py-4 bg-white border border-red-200 text-red-500 hover:bg-red-50 rounded-2xl font-black text-[12px] uppercase tracking-widest transition-all flex items-center justify-center gap-2"
             >
               <Trash2 className="w-5 h-5" /> HAPUS BAHAN
             </button>

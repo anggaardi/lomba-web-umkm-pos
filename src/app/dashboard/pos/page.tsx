@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSession, requireTenant } from "@/lib/auth";
-import { PosClient } from "@/components/dashboard/PosClient";
+import { PosClientWrapper } from "@/components/dashboard/PosClientWrapper";
 
 export default async function PosPage() {
   const session = await getCurrentSession();
@@ -121,7 +121,7 @@ export default async function PosPage() {
 
   return (
     <div className="space-y-6">
-      <PosClient
+      <PosClientWrapper
         initialProducts={mappedProducts}
         categories={mappedCategories}
         ingredients={ingredients}

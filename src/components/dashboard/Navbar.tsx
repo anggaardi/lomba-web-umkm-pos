@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import {
   Bell,
-  Search,
   User,
   ExternalLink,
   Building2,
@@ -24,20 +24,44 @@ export function Navbar({
   const isSuperAdmin = session?.user?.role === "SUPER_ADMIN";
 
   if (isSuperAdmin) {
-    // Generate simple breadcrumbs for Super Admin
-    let breadcrumbTitle = "Dashboard";
-    if (pathname.includes("/tenants")) breadcrumbTitle = "Tenants List";
-    if (pathname.includes("/subscriptions")) breadcrumbTitle = "Subscriptions";
-    if (pathname.includes("/system")) breadcrumbTitle = "System";
+    // Generate breadcrumbs for Super Admin
+    const breadcrumbs: Array<{ label: string; href: string }> = [
+      { label: "Management", href: "/dashboard" }
+    ];
+    
+    if (pathname.includes("/tenants")) {
+      breadcrumbs.push({ label: "Corporate", href: "/dashboard/tenants" });
+    } else if (pathname.includes("/subscriptions")) {
+      breadcrumbs.push({ label: "System Log", href: "/dashboard/subscriptions" });
+    } else if (pathname.includes("/system")) {
+      breadcrumbs.push({ label: "API Log", href: "/dashboard/system" });
+    } else if (pathname.includes("/branches")) {
+      breadcrumbs.push({ label: "Branches", href: "/dashboard/branches" });
+    } else if (pathname.includes("/merchants")) {
+      breadcrumbs.push({ label: "Merchants", href: "/dashboard/merchants" });
+    } else if (pathname.includes("/feature-flags")) {
+      breadcrumbs.push({ label: "Feature Flags", href: "/dashboard/feature-flags" });
+    } else if (pathname.includes("/settings")) {
+      breadcrumbs.push({ label: "Settings", href: "/dashboard/settings" });
+    } else if (pathname === "/dashboard") {
+      breadcrumbs.push({ label: "Dashboard", href: "/dashboard" });
+    }
 
     return (
-      <header className="h-20 w-full bg-white flex items-center justify-between px-8 sticky top-0 z-30 border-b border-gray-200">
+      <header className="h-20 w-full bg-white items-center justify-between px-8 sticky top-0 z-30 border-b border-gray-200 hidden md:flex">
         <div className="flex items-center text-sm text-slate-500">
-          <span>Management</span>
-          <span className="mx-2 text-slate-300">›</span>
-          <span className="font-semibold text-slate-900">
-            {breadcrumbTitle}
-          </span>
+          {breadcrumbs.map((crumb, index) => (
+            <span key={index} className="flex items-center">
+              {index > 0 && <span className="mx-2 text-slate-300">›</span>}
+              {index === breadcrumbs.length - 1 ? (
+                <span className="font-semibold text-slate-900">{crumb.label}</span>
+              ) : (
+                <Link href={crumb.href} className="hover:text-slate-700 transition-colors">
+                  {crumb.label}
+                </Link>
+              )}
+            </span>
+          ))}
         </div>
 
         <div className="flex items-center gap-3">
@@ -65,19 +89,48 @@ export function Navbar({
     );
   }
 
+  // Generate breadcrumbs for Admin (Tenant)
+  const breadcrumbs: Array<{ label: string; href: string }> = [
+    { label: "Dashboard", href: "/dashboard" }
+  ];
+  
+  if (pathname.includes("/pos")) {
+    breadcrumbs.push({ label: "POS Kasir", href: "/dashboard/pos" });
+  } else if (pathname.includes("/inventory")) {
+    breadcrumbs.push({ label: "Inventory", href: "/dashboard/inventory" });
+  } else if (pathname.includes("/recipes")) {
+    breadcrumbs.push({ label: "Resep Produk", href: "/dashboard/recipes" });
+    if (pathname.includes("/recipes/new")) {
+      breadcrumbs.push({ label: "Tambah Resep", href: pathname });
+    } else if (pathname.includes("/edit") || (pathname.match(/\/recipes\/[^/]+/) && !pathname.endsWith("/recipes"))) {
+      breadcrumbs.push({ label: "Edit Resep", href: pathname });
+    }
+  } else if (pathname.includes("/transactions")) {
+    breadcrumbs.push({ label: "Transaksi", href: "/dashboard/transactions" });
+    if (pathname.match(/\/transactions\/[^/]+$/)) {
+      breadcrumbs.push({ label: "Detail Transaksi", href: pathname });
+    }
+  } else if (pathname.includes("/reports")) {
+    breadcrumbs.push({ label: "Laporan", href: "/dashboard/reports" });
+  } else if (pathname.includes("/settings")) {
+    breadcrumbs.push({ label: "Settings", href: "/dashboard/settings" });
+  }
+
   return (
-    <header className="h-20 w-full bg-white flex items-center justify-between px-8 sticky top-0 z-30 shadow-sm">
-      <div className="flex items-center flex-1">
-        <div className="relative w-96">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
-          </div>
-          <input
-            type="search"
-            className="block w-full p-3 pl-12 text-sm text-gray-900 border-0 rounded-xl bg-primary-light/50 focus:ring-2 focus:ring-primary focus:outline-none transition-all"
-            placeholder="Search activities, products..."
-          />
-        </div>
+    <header className="h-20 w-full bg-white items-center justify-between px-8 sticky top-0 z-30 border-b border-gray-200 hidden md:flex">
+      <div className="flex items-center text-sm text-slate-500">
+        {breadcrumbs.map((crumb, index) => (
+          <span key={index} className="flex items-center">
+            {index > 0 && <span className="mx-2 text-slate-300">›</span>}
+            {index === breadcrumbs.length - 1 ? (
+              <span className="font-semibold text-slate-900">{crumb.label}</span>
+            ) : (
+              <Link href={crumb.href} className="hover:text-slate-700 transition-colors">
+                {crumb.label}
+              </Link>
+            )}
+          </span>
+        ))}
       </div>
 
       <div className="flex items-center space-x-6">

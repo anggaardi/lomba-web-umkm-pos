@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   TrendingUp,
   FileText,
@@ -82,6 +83,7 @@ export type DashboardClientProps = {
   topProducts: TopProduct[];
   recentTransactions: RecentTransaction[];
   lowStockItems: LowStockItem[];
+  filter?: string;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -138,12 +140,24 @@ export default function DashboardClient({
   topProducts,
   recentTransactions,
   lowStockItems,
+  filter = "7days",
 }: DashboardClientProps) {
-  // Tentukan bar yang "active" = hari terakhir (index 6)
+  const router = useRouter();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleFilterChange = (newFilter: string) => {
+    router.push(`?filter=${newFilter}`, { scroll: false });
+  };
+
+  // Tentukan bar yang "active" = hari terakhir (index 6 atau yang terakhir)
   const activeBarIndex = chartData.length - 1;
 
-  // Total penjualan minggu ini
-  const weeklyTotal = chartData.reduce((sum, d) => sum + d.total, 0);
+  // Total penjualan untuk periode ini
+  const periodTotal = chartData.reduce((sum, d) => sum + d.total, 0);
 
   return (
     <div className="space-y-6">
@@ -243,20 +257,46 @@ export default function DashboardClient({
 
         {/* Sales Chart */}
         <div className="lg:col-span-8 bg-white p-6 rounded-4xl shadow-sm border border-gray-100">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-8 gap-4">
             <div>
               <h3 className="text-base font-bold text-gray-900 uppercase tracking-wider">
-                Penjualan 7 Hari Terakhir
+                {filter === "year" ? "Penjualan Tahun Ini" : filter === "month" ? "Penjualan Bulan Ini" : filter === "today" ? "Penjualan Hari Ini" : "Penjualan 7 Hari Terakhir"}
               </h3>
               <p className="text-xs font-semibold text-gray-400">Juta IDR</p>
+            </div>
+            
+            <div className="flex bg-gray-50 p-1 rounded-xl w-fit">
+              {[
+                { id: "today", label: "Hari Ini" },
+                { id: "7days", label: "7 Hari" },
+                { id: "month", label: "Bulan" },
+                { id: "year", label: "Tahun" },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => handleFilterChange(f.id)}
+                  className={cn(
+                    "px-4 py-1.5 text-xs font-bold rounded-lg transition-all",
+                    filter === f.id
+                      ? "bg-white text-primary shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
           </div>
 
           {chartData.every((d) => d.total === 0) ? (
             <div className="h-[250px] flex items-center justify-center">
               <p className="text-sm font-medium text-gray-400">
-                Belum ada data transaksi dalam 7 hari terakhir
+                Belum ada data transaksi untuk rentang waktu ini
               </p>
+            </div>
+          ) : !mounted ? (
+            <div className="h-[250px] flex items-center justify-center">
+              <p className="text-sm font-medium text-gray-400">Memuat grafik...</p>
             </div>
           ) : (
             <div className="h-[250px] w-full">
@@ -300,11 +340,11 @@ export default function DashboardClient({
           <div className="flex items-center space-x-12 mt-8 pt-6 border-t border-gray-50 flex-wrap gap-y-4 lg:flex-nowrap">
             <div>
               <p className="text-sm font-medium text-gray-400 mb-1">
-                Total Minggu ini
+                Total {filter === "year" ? "Tahun Ini" : filter === "month" ? "Bulan Ini" : filter === "today" ? "Hari Ini" : "Minggu ini"}
               </p>
               <p className="text-3xl font-black text-primary">
-                {weeklyTotal > 0
-                  ? `Rp ${(weeklyTotal / 1_000_000).toFixed(1)}jt`
+                {periodTotal > 0
+                  ? `Rp ${(periodTotal / 1_000_000).toFixed(1)}jt`
                   : "Rp 0"}
               </p>
             </div>

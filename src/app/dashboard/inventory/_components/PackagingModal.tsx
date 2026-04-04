@@ -1,5 +1,5 @@
 import React from "react";
-import { X, CheckCircle2, Loader2, Info, Trash2, Box } from "lucide-react";
+import { X, CheckCircle2, Loader2, Info, Trash2, Box, ChevronsUpDown } from "lucide-react";
 import { type Ingredient } from "../types";
 
 interface PackagingModalProps {
@@ -47,8 +47,8 @@ export function PackagingModal({
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-8 py-6 space-y-8 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
           {/* Info Alert */}
-          <div className="bg-primary/5 p-5 rounded-3xl flex items-start gap-4 border border-primary/10">
-            <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm shrink-0 border border-primary/10">
+          <div className="bg-primary/3 p-5 rounded-[24px] flex items-start gap-4 border border-primary/15">
+            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm shrink-0 border border-primary/15">
               <Info className="w-5 h-5 text-primary" />
             </div>
             <p className="text-[11px] text-primary/80 leading-relaxed font-black uppercase tracking-widest italic">
@@ -92,9 +92,9 @@ export function PackagingModal({
                 </div>
               ))}
               {(!selectedIngredient.packagings || selectedIngredient.packagings.length === 0) && (
-                <div className="text-center py-10 bg-slate-50/50 border-2 border-dashed border-slate-100 rounded-[32px]">
-                  <Box className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-                  <p className="text-xs text-slate-400 font-black uppercase tracking-widest">Belum ada kemasan</p>
+                <div className="text-center py-10 bg-transparent border-2 border-dashed border-slate-100 rounded-[32px]">
+                  <Box className="w-12 h-12 text-slate-200 mx-auto mb-3" />
+                  <p className="text-[11px] text-slate-400 font-black uppercase tracking-widest">Belum ada kemasan</p>
                 </div>
               )}
             </div>
@@ -102,7 +102,7 @@ export function PackagingModal({
         </div>
 
         {/* Footer Form - Fixed */}
-        <div className="px-8 py-8 bg-slate-50/80 border-t border-slate-100 backdrop-blur-sm relative z-10">
+        <div className="px-8 py-8 bg-white border-t border-slate-50 relative z-10">
           <div className="space-y-5">
             <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest ml-1">
               Tambah Kemasan Baru
@@ -113,7 +113,7 @@ export function PackagingModal({
                   name="name"
                   required
                   placeholder="Sak, Bal, Botol"
-                  className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3.5 text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                  className="w-full bg-white border border-slate-200 rounded-[20px] px-5 py-3.5 text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
                 />
               </div>
               <div className="space-y-1.5">
@@ -123,16 +123,21 @@ export function PackagingModal({
                     type="number"
                     required
                     placeholder="Nilai Konversi"
-                    className="w-full bg-white border border-slate-200 rounded-2xl pl-5 pr-12 py-3.5 text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300"
+                    className="w-full bg-white border border-slate-200 rounded-[20px] pl-5 pr-20 py-3.5 text-xs font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-slate-300 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
-                  <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">
-                    {selectedIngredient.unit}
-                  </span>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 pointer-events-none">
+                    <div className="flex flex-col items-center justify-center bg-slate-100 rounded text-slate-400 p-0.5">
+                      <ChevronsUpDown className="w-[14px] h-[14px]" />
+                    </div>
+                    <span className="text-[11px] font-black text-slate-700">
+                      {selectedIngredient.unit}
+                    </span>
+                  </div>
                 </div>
               </div>
               <button
                 disabled={isSubmitting}
-                className="col-span-2 py-4 bg-primary text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:bg-primary-dark active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                className="col-span-2 py-4 bg-primary text-white rounded-[20px] font-black text-[11px] uppercase tracking-widest shadow-lg shadow-primary/20 transition-all hover:bg-primary-dark active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan Kemasan Baru"}
               </button>

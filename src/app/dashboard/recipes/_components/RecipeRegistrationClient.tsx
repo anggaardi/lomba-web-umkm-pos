@@ -275,24 +275,16 @@ export default function RecipeRegistrationClient({
   return (
     <div className="w-full max-w-[1400px] mx-auto space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link
-            href="/dashboard/recipes"
-            className="p-2 hover:bg-white rounded-xl text-slate-400 hover:text-slate-600 transition-all border border-transparent hover:border-slate-200"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary-light flex items-center justify-center text-primary">
-              <ChefHat className="w-6 h-6" />
-            </div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">
-              {initialData ? "Edit Recipe" : "Add New Recipe"}
-            </h1>
-          </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h2 className="text-3xl font-black text-slate-900">
+            {initialData ? "Edit Recipe" : "Create Recipe"}
+          </h2>
+          <p className="text-slate-500 font-medium text-sm">
+            {initialData ? "Update product information and ingredient composition." : "Create a new recipe by providing product and ingredient information."}
+          </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0">
           <button onClick={() => router.back()} className="text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors">
             Cancel
           </button>
@@ -307,12 +299,6 @@ export default function RecipeRegistrationClient({
       </div>
 
       <div className="space-y-8">
-        <div className="space-y-1">
-          <h2 className="text-3xl font-bold text-slate-900">Create Recipes</h2>
-          <p className="text-slate-500 font-medium">
-            {initialData ? "Update product information and ingredient composition." : "Create a new recipe by providing product and ingredient information."}
-          </p>
-        </div>
 
         {error && (
           <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-700 animate-in fade-in slide-in-from-top-4">
@@ -418,6 +404,7 @@ export default function RecipeRegistrationClient({
         isOpen={isAddIngredientModalOpen}
         onClose={() => setIsAddIngredientModalOpen(false)}
         ingredients={ingredients}
+        categories={localCategories}
         searchQuery={ingredientSearchQuery}
         setSearchQuery={setIngredientSearchQuery}
         selectedIds={selectedIngredientIds}

@@ -7,9 +7,10 @@ interface MobileRecipeCardProps {
   product: Product;
   ingredients: Ingredient[];
   router: any;
+  onDelete: (id: string) => void;
 }
 
-export function MobileRecipeCard({ product, ingredients, router }: MobileRecipeCardProps) {
+export function MobileRecipeCard({ product, ingredients, router, onDelete }: MobileRecipeCardProps) {
   let isComplete = product.recipes.length > 0;
   product.recipes.forEach((r: RecipeItem) => {
     const ing = ingredients.find((i: Ingredient) => i.id === r.ingredientId);
@@ -57,7 +58,10 @@ export function MobileRecipeCard({ product, ingredients, router }: MobileRecipeC
         >
           <Edit className="w-3.5 h-3.5" /> Edit
         </button>
-        <button className="flex items-center justify-center gap-2 py-4 text-xs font-bold text-red-500 transition-colors">
+        <button 
+          onClick={() => onDelete(product.id)} 
+          className="flex items-center justify-center gap-2 py-4 text-xs font-bold text-red-500 transition-colors hover:bg-red-50"
+        >
           <Trash2 className="w-3.5 h-3.5" /> Hapus
         </button>
       </div>
